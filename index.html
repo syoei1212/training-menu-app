@@ -388,6 +388,11 @@
     .timer-fab.running .timer-fab-icon { display: none; }
     .timer-fab.running .timer-fab-time { display: block; color: #fff; font-size: 13px; }
     .timer-fab:hover { transform: scale(1.08); }
+    .timer-fab.running { animation: fab-pop .35s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes fab-pop {
+      from { transform: scale(.7); opacity: .5; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
 
     .timer-panel {
       background: var(--surface); border: 1.5px solid var(--border);
@@ -992,9 +997,11 @@ function timerAutoStart() {
     updateTimerUI();
     if (timerRemain <= 0) timerFinished();
   }, 1000);
-  // モーダルが開いている間はパネルを出さない（FABだけ見せる）
+  // モーダルが開いているときはパネルを出さずFABだけ強調、閉じたら自動表示
   if (!document.getElementById('logModal').classList.contains('open')) {
     document.getElementById('timerPanel').classList.remove('hidden');
+  } else {
+    showToast(`⏱ ${formatTime(timerTotal)} スタート！`);
   }
   updateTimerUI();
 }
