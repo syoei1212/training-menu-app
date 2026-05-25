@@ -442,6 +442,27 @@
     .preset-btn.active { background: rgba(129,140,248,.18); border-color: var(--accent); color: var(--accent); }
     .preset-btn:hover   { border-color: var(--accent); color: var(--accent); }
 
+    /* Modal inline timer bar */
+    .modal-timer-bar {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 8px; padding: 10px 14px;
+      background: rgba(129,140,248,.1); border: 1.5px solid rgba(129,140,248,.35);
+      border-radius: 12px; animation: panel-slide-in .25s ease;
+    }
+    .modal-timer-bar.hidden { display: none; }
+    .modal-timer-ring-wrap {
+      position: relative; width: 44px; height: 44px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-timer-ring-svg { width: 44px; height: 44px; position: absolute; }
+    .modal-timer-count {
+      position: relative; font-size: 11px; font-weight: 900;
+      color: var(--accent); z-index: 1; line-height: 1;
+    }
+    .modal-timer-info { display: flex; flex-direction: column; gap: 2px; }
+    .modal-timer-label { font-size: 12px; font-weight: 800; color: var(--accent); }
+    .modal-timer-sub   { font-size: 10px; color: var(--text-sub); }
+
     /* Custom time input */
     .timer-custom {
       margin-bottom: 12px; padding: 9px 10px 8px;
@@ -644,6 +665,22 @@
           <span>SET</span><span>回数</span><span>重量 (kg)</span><span></span>
         </div>
         <div id="setsContainer"></div>
+        <!-- インターバルタイマーバー（セット追加時に表示） -->
+        <div class="modal-timer-bar hidden" id="modalTimerBar">
+          <div class="modal-timer-ring-wrap">
+            <svg class="modal-timer-ring-svg" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(129,140,248,.2)" stroke-width="3"/>
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#818cf8" stroke-width="3"
+                stroke-dasharray="87.96" stroke-dashoffset="0" id="modalTimerRing"
+                transform="rotate(-90 18 18)"/>
+            </svg>
+            <span class="modal-timer-count" id="modalTimerCount">1:30</span>
+          </div>
+          <div class="modal-timer-info">
+            <span class="modal-timer-label">⏱ インターバル中</span>
+            <span class="modal-timer-sub">休憩が終わったら次のセットへ</span>
+          </div>
+        </div>
         <button class="add-set-btn" id="addSetBtn">＋ セットを追加</button>
       </div>
       <!-- Note -->
@@ -940,6 +977,18 @@ function updateTimerUI() {
     startBtn.textContent = (timerRemain < timerTotal && timerRemain > 0) ? '▶ 再開' : '▶ スタート';
     startBtn.classList.remove('paused');
   }
+
+  // モーダル内タイマーバーの更新
+  const modalBar  = document.getElementById('modalTimerBar');
+  const modalCount = document.getElementById('modalTimerCount');
+  const modalRing  = document.getElementById('modalTimerRing');
+  if (modalBar && modalCount) {
+    const MCIRC = 2 * Math.PI * 14; // r=14 in viewBox 36×36
+    modalCount.textContent = formatTime(timerRemain);
+    if (modalRing) modalRing.setAttribute('stroke-dashoffset', MCIRC * (1 - progress));
+    const modalOpen = document.getElementById('logModal').classList.contains('open');
+    modalBar.classList.toggle('hidden', !(timerRunning && modalOpen));
+  }
 }
 
 function timerFinished() {
@@ -997,11 +1046,9 @@ function timerAutoStart() {
     updateTimerUI();
     if (timerRemain <= 0) timerFinished();
   }, 1000);
-  // モーダルが開いているときはパネルを出さずFABだけ強調、閉じたら自動表示
+  // モーダルが開いているときはパネルを出さない（モーダル内バーで表示）
   if (!document.getElementById('logModal').classList.contains('open')) {
     document.getElementById('timerPanel').classList.remove('hidden');
-  } else {
-    showToast(`⏱ ${formatTime(timerTotal)} スタート！`);
   }
   updateTimerUI();
 }
@@ -1275,7 +1322,9 @@ function closeLogModal() {
   document.getElementById('logModal').classList.remove('open');
   document.body.style.overflow = '';
   modalExercise = null;
-  // モーダルを閉じた後、タイマーが動いていればパネルを表示
+  // モーダル内バーを隠す
+  document.getElementById('modalTimerBar')?.classList.add('hidden');
+  // タイマーが動いていればパネルを表示
   if (timerRunning) {
     document.getElementById('timerPanel').classList.remove('hidden');
   }
