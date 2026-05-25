@@ -371,7 +371,7 @@
 
     /* ── Timer Widget ── */
     .timer-widget {
-      position: fixed; bottom: 24px; right: 16px; z-index: 150;
+      position: fixed; bottom: 24px; right: 16px; z-index: 210;
       display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
     }
     .timer-fab {
@@ -992,7 +992,10 @@ function timerAutoStart() {
     updateTimerUI();
     if (timerRemain <= 0) timerFinished();
   }, 1000);
-  document.getElementById('timerPanel').classList.remove('hidden');
+  // モーダルが開いている間はパネルを出さない（FABだけ見せる）
+  if (!document.getElementById('logModal').classList.contains('open')) {
+    document.getElementById('timerPanel').classList.remove('hidden');
+  }
   updateTimerUI();
 }
 
@@ -1265,6 +1268,10 @@ function closeLogModal() {
   document.getElementById('logModal').classList.remove('open');
   document.body.style.overflow = '';
   modalExercise = null;
+  // モーダルを閉じた後、タイマーが動いていればパネルを表示
+  if (timerRunning) {
+    document.getElementById('timerPanel').classList.remove('hidden');
+  }
 }
 
 function renderSets(sets) {
@@ -1312,6 +1319,8 @@ document.getElementById('addSetBtn').addEventListener('click', () => {
   });
   container.appendChild(newDiv);
   newDiv.querySelector('.reps-input').focus();
+  // セット追加 = 直前のセットが完了 → インターバルタイマー自動スタート
+  timerAutoStart();
 });
 
 document.getElementById('btnSave').addEventListener('click', () => {
@@ -1337,14 +1346,11 @@ document.getElementById('btnSave').addEventListener('click', () => {
   closeLogModal();
   renderExercises();
 
-  // ② タイマー自動スタート
-  timerAutoStart();
-
-  // ③ PR か通常 toast
+  // ② PR か通常 toast
   if (prResult) {
     setTimeout(() => showPRCelebration(savedName, prResult), 350);
   } else {
-    showToast(`✓ ${savedName} を記録 · ⏱ ${formatTime(timerTotal)}スタート`);
+    showToast(`✓ ${savedName} を記録しました`);
   }
 });
 
