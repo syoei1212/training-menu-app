@@ -253,6 +253,52 @@
       border-radius: 8px; padding: 8px 10px; margin-top: 4px; line-height: 1.6;
     }
 
+    /* ── History view toggle ── */
+    .history-view-toggle {
+      display: flex; gap: 6px; margin-bottom: 14px;
+    }
+    .hist-tab-btn {
+      flex: 1; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 9px 0; color: var(--text-sub);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+      text-align: center;
+    }
+    .hist-tab-btn.active {
+      background: rgba(129,140,248,.15); border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Chart view ── */
+    .chart-ex-select {
+      width: 100%; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 9px 12px; color: var(--text);
+      font-size: 13px; outline: none; margin-bottom: 12px;
+      -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236868a0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 32px;
+    }
+    .chart-ex-select:focus { border-color: var(--accent); }
+    .chart-stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px;
+    }
+    .chart-stat {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 4px; text-align: center;
+    }
+    .chart-stat-val { font-size: 16px; font-weight: 800; color: var(--accent); line-height: 1.2; }
+    .chart-stat-unit { font-size: 10px; font-weight: 400; }
+    .chart-stat-label { font-size: 9px; color: var(--text-sub); margin-top: 3px; }
+    .chart-wrap {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--radius); padding: 4px 4px 0; overflow: hidden;
+    }
+    .chart-empty {
+      text-align: center; padding: 32px 20px; color: var(--text-sub);
+      font-size: 13px; line-height: 1.7;
+    }
+    .chart-empty div { font-size: 32px; margin-bottom: 8px; }
+
     /* ── Log Modal ── */
     .modal-overlay {
       position: fixed; inset: 0; z-index: 200;
@@ -614,12 +660,23 @@
   <div class="history-section">
     <!-- Stats -->
     <div class="history-stats" id="historyStats"></div>
-    <!-- Filter -->
-    <div class="history-filter">
+    <!-- View toggle -->
+    <div class="history-view-toggle">
+      <button class="hist-tab-btn active" data-view="timeline">📋 タイムライン</button>
+      <button class="hist-tab-btn"        data-view="chart">📈 グラフ</button>
+    </div>
+    <!-- Filter (timeline only) -->
+    <div class="history-filter" id="historyFilter">
       <input class="hist-search" id="histSearch" type="search" placeholder="🔍 種目で絞り込み…" autocomplete="off">
     </div>
     <!-- Timeline -->
     <div id="historyTimeline"></div>
+    <!-- Chart -->
+    <div id="historyChart" style="display:none">
+      <select class="chart-ex-select" id="chartExSelect"></select>
+      <div class="chart-stats-row" id="chartStatsRow"></div>
+      <div class="chart-wrap" id="chartWrap"></div>
+    </div>
   </div>
 </div>
 
@@ -1390,7 +1447,8 @@ document.getElementById('modalBackdrop').addEventListener('click', closeLogModal
 ─────────────────────────────────── */
 function renderHistory() {
   renderHistoryStats();
-  renderHistoryTimeline();
+  if (historyView === 'chart') renderChartView();
+  else renderHistoryTimeline();
 }
 
 function renderHistoryStats() {
@@ -1506,6 +1564,181 @@ function renderHistoryTimeline() {
 }
 
 /* ───────────────────────────────────
+   PROGRESS CHART
+─────────────────────────────────── */
+let historyView    = 'timeline';
+let chartCurrentEx = null;
+
+function getExercisesWithLogs() {
+  const freq = {};
+  getLogs().forEach(l => { freq[l.exerciseName] = (freq[l.exerciseName]||0)+1; });
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1]).map(([name]) => name);
+}
+
+function switchHistoryView(view) {
+  historyView = view;
+  document.querySelectorAll('.hist-tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.view === view)
+  );
+  const isChart = view === 'chart';
+  document.getElementById('historyTimeline').style.display = isChart ? 'none' : '';
+  document.getElementById('historyChart').style.display    = isChart ? ''     : 'none';
+  document.getElementById('historyFilter').style.display   = isChart ? 'none' : '';
+  if (isChart) renderChartView();
+  else renderHistoryTimeline();
+}
+
+function renderChartView() {
+  const exList = getExercisesWithLogs();
+  const sel    = document.getElementById('chartExSelect');
+  if (!exList.length) {
+    document.getElementById('chartStatsRow').innerHTML = '';
+    document.getElementById('chartWrap').innerHTML =
+      '<div class="chart-empty"><div>📊</div><p>記録がありません</p></div>';
+    return;
+  }
+  const prev = sel.value;
+  sel.innerHTML = exList.map(n => `<option value="${n}">${n}</option>`).join('');
+  if (prev && exList.includes(prev))             sel.value = prev;
+  else if (chartCurrentEx && exList.includes(chartCurrentEx)) sel.value = chartCurrentEx;
+  chartCurrentEx = sel.value;
+  renderProgressChart(chartCurrentEx);
+}
+
+function renderProgressChart(exerciseName) {
+  chartCurrentEx = exerciseName;
+  const allLogs = getLogs();
+  const logs = allLogs
+    .filter(l => l.exerciseName === exerciseName)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  const wrap     = document.getElementById('chartWrap');
+  const statsRow = document.getElementById('chartStatsRow');
+
+  if (!logs.length) {
+    statsRow.innerHTML = '';
+    wrap.innerHTML = '<div class="chart-empty"><div>📊</div><p>記録がありません</p></div>';
+    return;
+  }
+
+  // calc best estimated 1RM per session
+  const pts = logs.map(log => {
+    const e1rm = Math.max(0, ...log.sets.map(s => calc1RM(Number(s.weight)||0, Number(s.reps)||0)));
+    const d = new Date(log.date + 'T00:00:00');
+    return { date: log.date, e1rm, label: `${d.getMonth()+1}/${d.getDate()}` };
+  });
+
+  // stats row
+  const latest   = pts[pts.length - 1];
+  const prevPt   = pts.length >= 2 ? pts[pts.length - 2] : null;
+  const maxPt    = pts.reduce((m,p) => p.e1rm > m.e1rm ? p : m, pts[0]);
+  const diff     = prevPt ? latest.e1rm - prevPt.e1rm : null;
+  const diffStr  = diff === null ? '—' : (diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1));
+  const diffClr  = diff === null ? '' : (diff > 0 ? 'color:#34d399' : diff < 0 ? 'color:#f87171' : '');
+  const accentClr = (() => {
+    const l = allLogs.find(l2 => l2.exerciseName === exerciseName);
+    return l?.exerciseColor || '#818cf8';
+  })();
+
+  statsRow.innerHTML = `
+    <div class="chart-stat">
+      <div class="chart-stat-val">${latest.e1rm.toFixed(1)}<span class="chart-stat-unit">kg</span></div>
+      <div class="chart-stat-label">最新推定1RM</div>
+    </div>
+    <div class="chart-stat">
+      <div class="chart-stat-val" style="${diffClr}">${diffStr}<span class="chart-stat-unit">${diff===null?'':'kg'}</span></div>
+      <div class="chart-stat-label">前回比</div>
+    </div>
+    <div class="chart-stat">
+      <div class="chart-stat-val">${maxPt.e1rm.toFixed(1)}<span class="chart-stat-unit">kg</span></div>
+      <div class="chart-stat-label">最高推定1RM</div>
+    </div>
+    <div class="chart-stat">
+      <div class="chart-stat-val">${pts.length}</div>
+      <div class="chart-stat-label">記録回数</div>
+    </div>`;
+
+  if (pts.length < 2) {
+    wrap.innerHTML = '<div class="chart-empty"><div>📈</div><p>グラフ表示には<br>2回以上の記録が必要です</p></div>';
+    return;
+  }
+
+  // SVG layout
+  const W = 320, H = 180, PL = 50, PR = 14, PT = 18, PB = 38;
+  const plotW = W - PL - PR;
+  const plotH = H - PT - PB;
+
+  const vals = pts.map(p => p.e1rm);
+  const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
+  const pad  = (rawMax - rawMin) * 0.12 || rawMax * 0.1 || 5;
+  const minV = rawMin - pad;
+  const maxV = rawMax + pad;
+  const range = maxV - minV;
+
+  const toX = i => PL + (i / (pts.length - 1)) * plotW;
+  const toY = v => PT + plotH - ((v - minV) / range) * plotH;
+
+  // Y grid (5 lines)
+  let gridLines = '';
+  const gridN = 4;
+  for (let i = 0; i <= gridN; i++) {
+    const v = minV + (range / gridN) * i;
+    const y = toY(v);
+    gridLines += `<line x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`;
+    gridLines += `<text x="${PL-5}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="rgba(255,255,255,.3)" font-size="9">${Math.round(v)}</text>`;
+  }
+
+  // area + line
+  const polyPts  = pts.map((p,i) => `${toX(i).toFixed(1)},${toY(p.e1rm).toFixed(1)}`).join(' ');
+  const areaPts  = `${toX(0).toFixed(1)},${(H-PB).toFixed(1)} ${polyPts} ${toX(pts.length-1).toFixed(1)},${(H-PB).toFixed(1)}`;
+
+  // X labels (max 7)
+  let xLabels = '';
+  const step = Math.max(1, Math.ceil(pts.length / 7));
+  pts.forEach((p,i) => {
+    if (i % step === 0 || i === pts.length-1) {
+      xLabels += `<text x="${toX(i).toFixed(1)}" y="${H-PB+14}" text-anchor="middle" fill="rgba(255,255,255,.38)" font-size="9">${p.label}</text>`;
+    }
+  });
+
+  // dots
+  let dots = '';
+  pts.forEach((p,i) => {
+    const isLatest = i === pts.length - 1;
+    const isMax    = p === maxPt && p !== latest;
+    const cx = toX(i), cy = toY(p.e1rm);
+    const r    = (isLatest || isMax) ? 5 : 3;
+    const fill = isMax ? '#fbbf24' : accentClr;
+    dots += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="${fill}" stroke="#0c0c14" stroke-width="1.5"/>`;
+    if (isLatest) {
+      const lblX   = cx > W - 60 ? cx - 8 : cx + 8;
+      const anchor = cx > W - 60 ? 'end' : 'start';
+      dots += `<text x="${lblX.toFixed(1)}" y="${(cy - 8).toFixed(1)}" text-anchor="${anchor}" fill="${accentClr}" font-size="10" font-weight="700">${p.e1rm.toFixed(1)}kg</text>`;
+    }
+    if (isMax) {
+      const lblX   = cx > W - 60 ? cx - 8 : cx + 8;
+      const anchor = cx > W - 60 ? 'end' : 'start';
+      dots += `<text x="${lblX.toFixed(1)}" y="${(cy - 8).toFixed(1)}" text-anchor="${anchor}" fill="#fbbf24" font-size="9">🏆</text>`;
+    }
+  });
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">
+  <defs>
+    <linearGradient id="cGrad${btoa(exerciseName).replace(/[^A-Za-z0-9]/g,'').slice(0,8)}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="${accentClr}" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="${accentClr}" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>
+  ${gridLines}
+  <polygon points="${areaPts}" fill="url(#cGrad${btoa(exerciseName).replace(/[^A-Za-z0-9]/g,'').slice(0,8)})"/>
+  <polyline points="${polyPts}" fill="none" stroke="${accentClr}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  ${dots}
+  ${xLabels}
+  <text x="${PL}" y="${H-2}" fill="rgba(255,255,255,.2)" font-size="8">推定1RM (Epley式)</text>
+</svg>`;
+}
+
+/* ───────────────────────────────────
    TOAST
 ─────────────────────────────────── */
 let toastTimer;
@@ -1556,6 +1789,14 @@ document.getElementById('searchInput').addEventListener('input', e => {
 });
 // history search
 document.getElementById('histSearch').addEventListener('input', renderHistoryTimeline);
+// history view toggle
+document.querySelectorAll('.hist-tab-btn').forEach(btn =>
+  btn.addEventListener('click', () => switchHistoryView(btn.dataset.view))
+);
+// chart exercise selector
+document.getElementById('chartExSelect').addEventListener('change', e =>
+  renderProgressChart(e.target.value)
+);
 // tabs
 document.querySelectorAll('.tab-btn').forEach(btn =>
   btn.addEventListener('click', () => {
