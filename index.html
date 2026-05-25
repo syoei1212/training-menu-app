@@ -368,6 +368,142 @@
     /* ── Misc ── */
     .empty { text-align: center; padding: 52px 20px; color: var(--text-sub); }
     .empty-icon { font-size: 38px; margin-bottom: 10px; }
+
+    /* ── Timer Widget ── */
+    .timer-widget {
+      position: fixed; bottom: 24px; right: 16px; z-index: 150;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+    }
+    .timer-fab {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid var(--border);
+      box-shadow: 0 4px 18px rgba(0,0,0,.45);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: var(--text); transition: all .2s;
+      flex-direction: column; gap: 1px; line-height: 1;
+    }
+    .timer-fab-icon { font-size: 18px; line-height: 1; }
+    .timer-fab-time { font-size: 10px; font-weight: 800; color: var(--accent); display: none; }
+    .timer-fab.running { background: var(--accent); border-color: var(--accent); box-shadow: 0 4px 22px rgba(129,140,248,.45); }
+    .timer-fab.running .timer-fab-icon { display: none; }
+    .timer-fab.running .timer-fab-time { display: block; color: #fff; font-size: 13px; }
+    .timer-fab:hover { transform: scale(1.08); }
+
+    .timer-panel {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 16px 16px 14px; width: 248px;
+      box-shadow: 0 10px 36px rgba(0,0,0,.5);
+      animation: panel-slide-in .22s ease;
+    }
+    .timer-panel.hidden { display: none; }
+    @keyframes panel-slide-in {
+      from { opacity: 0; transform: translateY(10px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+    .timer-panel-hd {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+    }
+    .timer-panel-title { font-size: 12px; font-weight: 700; color: var(--text-sub); }
+    .timer-panel-close {
+      background: none; border: none; color: var(--text-sub); font-size: 14px;
+      cursor: pointer; padding: 2px 6px; border-radius: 6px;
+    }
+    .timer-panel-close:hover { color: var(--text); }
+
+    /* Ring */
+    .timer-ring-wrap {
+      position: relative; width: 116px; height: 116px; margin: 0 auto 14px;
+    }
+    .timer-ring { width: 100%; height: 100%; }
+    .timer-ring-bg   { fill: none; stroke: var(--border); stroke-width: 7; }
+    .timer-ring-prog { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round;
+      transition: stroke-dashoffset .9s linear, stroke .3s; }
+    .timer-ring-wrap.warn .timer-ring-prog { stroke: #ef4444; }
+    .timer-number {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 800; letter-spacing: .5px; color: var(--text);
+    }
+    .timer-ring-wrap.warn .timer-number { color: #ef4444; animation: num-pulse 1s ease-in-out infinite; }
+    @keyframes num-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
+
+    /* Presets */
+    .timer-presets { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; margin-bottom: 12px; }
+    .preset-btn {
+      padding: 6px 2px; border-radius: 8px;
+      background: var(--card); border: 1.5px solid var(--border);
+      color: var(--text-sub); font-size: 10px; font-weight: 700; cursor: pointer; transition: all .18s;
+    }
+    .preset-btn.active { background: rgba(129,140,248,.18); border-color: var(--accent); color: var(--accent); }
+    .preset-btn:hover   { border-color: var(--accent); color: var(--accent); }
+
+    /* Controls */
+    .timer-controls { display: flex; gap: 7px; }
+    .timer-reset-btn {
+      width: 42px; height: 42px; border-radius: 11px;
+      background: var(--card); border: 1.5px solid var(--border);
+      color: var(--text-sub); font-size: 17px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all .18s;
+    }
+    .timer-reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .timer-start-btn {
+      flex: 1; padding: 11px 8px; border-radius: 11px; border: none;
+      background: var(--accent); color: #fff; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: filter .2s;
+    }
+    .timer-start-btn:hover { filter: brightness(1.1); }
+    .timer-start-btn.paused { background: #f97316; }
+
+    /* ── PR Badge (exercise card) ── */
+    .pr-badge {
+      margin-left: 3px; font-size: 10px; padding: 1px 5px; border-radius: 5px;
+      background: rgba(250,204,21,.15); border: 1px solid rgba(250,204,21,.35);
+      color: #facc15; font-weight: 800; display: none; align-items: center; gap: 2px;
+    }
+    .pr-badge.show { display: inline-flex; }
+    .pr-history-tag {
+      font-size: 9px; padding: 1px 5px; border-radius: 4px;
+      background: rgba(250,204,21,.15); color: #facc15; font-weight: 700;
+      margin-left: 5px; vertical-align: middle;
+    }
+
+    /* ── PR Celebration Overlay ── */
+    .pr-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
+      opacity: 0; pointer-events: none; transition: opacity .3s;
+    }
+    .pr-overlay.show { opacity: 1; pointer-events: all; }
+    .pr-card {
+      background: var(--surface); border: 2px solid #facc15;
+      border-radius: 24px; padding: 36px 44px;
+      text-align: center; max-width: 310px;
+      box-shadow: 0 0 70px rgba(250,204,21,.22);
+      animation: pr-pop .38s cubic-bezier(.68,-.55,.265,1.55);
+    }
+    @keyframes pr-pop { from{transform:scale(.65)} to{transform:scale(1)} }
+    .pr-trophy  { font-size: 60px; line-height: 1; margin-bottom: 10px; }
+    .pr-title   { font-size: 20px; font-weight: 800; color: #facc15; margin-bottom: 8px; }
+    .pr-ex-name { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .pr-e1rm    { font-size: 26px; font-weight: 800; color: #facc15; margin-bottom: 4px; }
+    .pr-value   { font-size: 13px; color: var(--text-sub); margin-bottom: 16px; }
+    .pr-tap     { font-size: 11px; color: var(--text-sub); }
+
+    /* ── Confetti ── */
+    .confetti-wrap {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none; z-index: 500; overflow: hidden;
+    }
+    .conf-piece {
+      position: absolute; top: -16px; border-radius: 2px;
+      animation: conf-fall linear forwards;
+    }
+    @keyframes conf-fall {
+      0%   { transform: translateY(0)      rotate(0deg);   opacity: 1; }
+      85%  { opacity: 1; }
+      100% { transform: translateY(105vh)  rotate(800deg); opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -483,6 +619,50 @@
       <button class="btn-cancel" id="btnCancel">キャンセル</button>
       <button class="btn-save"   id="btnSave">✓ 記録を保存</button>
     </div>
+  </div>
+</div>
+
+<!-- ── Timer Widget ── -->
+<div class="timer-widget" id="timerWidget">
+  <div class="timer-panel hidden" id="timerPanel">
+    <div class="timer-panel-hd">
+      <span class="timer-panel-title">⏱ インターバルタイマー</span>
+      <button class="timer-panel-close" id="timerPanelClose">✕</button>
+    </div>
+    <div class="timer-ring-wrap" id="timerRingWrap">
+      <svg class="timer-ring" viewBox="0 0 100 100">
+        <circle class="timer-ring-bg"   cx="50" cy="50" r="42"/>
+        <circle class="timer-ring-prog" id="timerRingProg" cx="50" cy="50" r="42"
+          stroke-dasharray="263.9" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+      </svg>
+      <div class="timer-number" id="timerNumber">1:30</div>
+    </div>
+    <div class="timer-presets" id="timerPresets">
+      <button class="preset-btn" data-sec="60">60秒</button>
+      <button class="preset-btn active" data-sec="90">90秒</button>
+      <button class="preset-btn" data-sec="120">2分</button>
+      <button class="preset-btn" data-sec="180">3分</button>
+    </div>
+    <div class="timer-controls">
+      <button class="timer-reset-btn" id="timerResetBtn">↺</button>
+      <button class="timer-start-btn" id="timerStartBtn">▶ スタート</button>
+    </div>
+  </div>
+  <button class="timer-fab" id="timerFab">
+    <span class="timer-fab-icon">⏱</span>
+    <span class="timer-fab-time" id="timerFabTime"></span>
+  </button>
+</div>
+
+<!-- ── PR Celebration Overlay ── -->
+<div class="pr-overlay" id="prOverlay">
+  <div class="pr-card">
+    <div class="pr-trophy">🏆</div>
+    <div class="pr-title">自己ベスト更新！</div>
+    <div class="pr-ex-name" id="prExName"></div>
+    <div class="pr-e1rm"    id="prE1rm"></div>
+    <div class="pr-value"   id="prValue"></div>
+    <div class="pr-tap">タップして閉じる</div>
   </div>
 </div>
 
@@ -602,6 +782,189 @@ function deleteLog(id) {
 function getLogCountForExercise(name) {
   return getLogs().filter(l => l.exerciseName === name).length;
 }
+
+/* ───────────────────────────────────
+   PR (PERSONAL RECORDS)
+─────────────────────────────────── */
+function getStoredPRs() {
+  try { return JSON.parse(localStorage.getItem('training_prs') || '{}'); } catch { return {}; }
+}
+function savePRs(prs) { localStorage.setItem('training_prs', JSON.stringify(prs)); }
+
+// Epley formula: estimated 1-rep max
+function calc1RM(weight, reps) {
+  if (!weight || !reps || reps < 1) return 0;
+  return reps === 1 ? weight : weight * (1 + reps / 30);
+}
+
+// Returns the new PR object if a PR was set, otherwise null
+function checkAndUpdatePR(log) {
+  let best = { e1rm: 0, weight: 0, reps: 0 };
+  log.sets.forEach(s => {
+    if (!s.weight || !s.reps) return;
+    const e = calc1RM(s.weight, s.reps);
+    if (e > best.e1rm) best = { e1rm: e, weight: s.weight, reps: s.reps };
+  });
+  if (!best.e1rm) return null;
+  const prs      = getStoredPRs();
+  const existing = prs[log.exerciseName];
+  if (!existing || best.e1rm > existing.e1rm) {
+    prs[log.exerciseName] = { ...best, date: log.date, logId: log.id };
+    savePRs(prs);
+    return prs[log.exerciseName];
+  }
+  return null;
+}
+
+function hasPR(name) { return !!getStoredPRs()[name]; }
+
+function showPRCelebration(name, pr) {
+  showConfetti();
+  document.getElementById('prExName').textContent = name;
+  document.getElementById('prE1rm').textContent   = `推定1RM: ${Math.round(pr.e1rm)} kg`;
+  document.getElementById('prValue').textContent  = `${pr.weight}kg × ${pr.reps}回`;
+  const overlay = document.getElementById('prOverlay');
+  overlay.classList.add('show');
+  const dismiss = () => { overlay.classList.remove('show'); overlay.removeEventListener('click', dismiss); };
+  setTimeout(dismiss, 4500);
+  overlay.addEventListener('click', dismiss);
+}
+
+function showConfetti() {
+  const COLORS = ['#818cf8','#f472b6','#34d399','#f97316','#facc15','#22d3ee','#a78bfa','#fb923c'];
+  const wrap = document.createElement('div');
+  wrap.className = 'confetti-wrap';
+  for (let i = 0; i < 50; i++) {
+    const p = document.createElement('div');
+    p.className = 'conf-piece';
+    const size = Math.random() * 9 + 5;
+    p.style.cssText = `left:${Math.random()*100}vw;background:${COLORS[i%COLORS.length]};
+      width:${size}px;height:${size}px;
+      animation-delay:${Math.random()*.7}s;animation-duration:${Math.random()*1.2+2}s;`;
+    wrap.appendChild(p);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), 4000);
+}
+
+/* ───────────────────────────────────
+   INTERVAL TIMER
+─────────────────────────────────── */
+const CIRC = 2 * Math.PI * 42;   // ≈ 263.9  (r=42 in viewBox 100×100)
+let timerTotal    = 90;
+let timerRemain   = 90;
+let timerTick     = null;
+let timerRunning  = false;
+
+function formatTime(s) {
+  return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+}
+
+function updateTimerUI() {
+  const progress  = timerRemain / timerTotal;
+  const ring      = document.getElementById('timerRingProg');
+  const numEl     = document.getElementById('timerNumber');
+  const fabTime   = document.getElementById('timerFabTime');
+  const fab       = document.getElementById('timerFab');
+  const startBtn  = document.getElementById('timerStartBtn');
+  const wrap      = document.getElementById('timerRingWrap');
+
+  ring.setAttribute('stroke-dashoffset', CIRC * (1 - progress));
+  numEl.textContent  = formatTime(timerRemain);
+  fabTime.textContent = formatTime(timerRemain);
+
+  const warn = timerRunning && timerRemain <= 10;
+  wrap.classList.toggle('warn', warn);
+  fab.classList.toggle('running', timerRunning);
+
+  if (timerRunning) {
+    startBtn.textContent = '⏸ 一時停止';
+    startBtn.classList.add('paused');
+  } else {
+    startBtn.textContent = (timerRemain < timerTotal && timerRemain > 0) ? '▶ 再開' : '▶ スタート';
+    startBtn.classList.remove('paused');
+  }
+}
+
+function timerFinished() {
+  timerRunning = false;
+  clearInterval(timerTick); timerTick = null;
+  timerRemain = timerTotal;
+  updateTimerUI();
+  playBeep();
+  if (navigator.vibrate) navigator.vibrate([200,100,200,100,300]);
+  showToast('⏱ インターバル終了！次のセットへ');
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[0, 440, .18], [.22, 554, .18], [.44, 880, .32]].forEach(([t, freq, dur]) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + t);
+      gain.gain.linearRampToValueAtTime(.38, ctx.currentTime + t + .02);
+      gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + t + dur);
+      osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + dur + .05);
+    });
+  } catch(e) {}
+}
+
+function timerStart() {
+  if (timerRunning) {
+    // pause
+    timerRunning = false; clearInterval(timerTick); timerTick = null;
+    updateTimerUI(); return;
+  }
+  if (timerRemain <= 0) timerRemain = timerTotal;
+  timerRunning = true;
+  timerTick = setInterval(() => {
+    timerRemain--;
+    updateTimerUI();
+    if (timerRemain <= 0) timerFinished();
+  }, 1000);
+  updateTimerUI();
+}
+
+function timerReset() {
+  timerRunning = false; clearInterval(timerTick); timerTick = null;
+  timerRemain = timerTotal; updateTimerUI();
+}
+
+function timerAutoStart() {
+  if (timerRunning) { timerRemain = timerTotal; return; }
+  timerRemain = timerTotal;
+  timerRunning = true;
+  timerTick = setInterval(() => {
+    timerRemain--;
+    updateTimerUI();
+    if (timerRemain <= 0) timerFinished();
+  }, 1000);
+  document.getElementById('timerPanel').classList.remove('hidden');
+  updateTimerUI();
+}
+
+// Timer events
+document.getElementById('timerFab').addEventListener('click', () => {
+  document.getElementById('timerPanel').classList.toggle('hidden');
+  updateTimerUI();
+});
+document.getElementById('timerPanelClose').addEventListener('click', () =>
+  document.getElementById('timerPanel').classList.add('hidden')
+);
+document.getElementById('timerStartBtn').addEventListener('click', timerStart);
+document.getElementById('timerResetBtn').addEventListener('click', timerReset);
+document.querySelectorAll('.preset-btn').forEach(btn =>
+  btn.addEventListener('click', () => {
+    timerTotal = timerRemain = parseInt(btn.dataset.sec);
+    timerRunning = false; clearInterval(timerTick); timerTick = null;
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateTimerUI();
+  })
+);
+updateTimerUI();   // init display
 
 /* ───────────────────────────────────
    STATE
@@ -769,10 +1132,12 @@ function renderExercises() {
     const lv    = LEVEL_MAP[ex.level];
     const tools = ex.tools.map(t => { const tl=TOOL_MAP[t]||{text:t,cls:'tag-free'}; return `<span class="tag ${tl.cls}">${tl.text}</span>`; }).join('');
     const logCount = getLogCountForExercise(ex.name);
-    return `<div class="exercise-card" style="--accent-color:${color}">
+    const isPR     = hasPR(ex.name);
+    return `<div class="exercise-card" style="--accent-color:${color}${isPR?';border-color:rgba(250,204,21,.35)':''}">
       <div class="ex-cat-row">
         <span class="ex-cat-dot" style="background:${color}"></span>
         <span class="ex-cat-label" style="color:${color}">${mu?mu.labelShort:''}</span>
+        <span class="pr-badge${isPR?' show':''}">🏆 PR</span>
         <span class="log-count-badge${logCount>0?' show':''}" title="${logCount}回記録済み">✓ ${logCount}</span>
       </div>
       <div class="ex-name">${ex.name}</div>
@@ -876,18 +1241,30 @@ document.getElementById('btnSave').addEventListener('click', () => {
     return;
   }
   const log = {
-    id:           Date.now().toString(),
-    exerciseName: modalExercise.name,
-    exerciseCat:  modalExercise.cat,
-    exerciseColor:modalExercise.color,
-    date:         document.getElementById('logDate').value,
+    id:            Date.now().toString(),
+    exerciseName:  modalExercise.name,
+    exerciseCat:   modalExercise.cat,
+    exerciseColor: modalExercise.color,
+    date:          document.getElementById('logDate').value,
     sets,
-    note:         document.getElementById('logNote').value.trim(),
+    note:          document.getElementById('logNote').value.trim(),
   };
+  // ① PR チェック（addLog より前に実行して既存記録と比較）
+  const prResult   = checkAndUpdatePR(log);
+  const savedName  = modalExercise.name;
   addLog(log);
   closeLogModal();
-  renderExercises();        // refresh badge counts
-  showToast(`✓ ${modalExercise.name} の記録を保存しました`);
+  renderExercises();
+
+  // ② タイマー自動スタート
+  timerAutoStart();
+
+  // ③ PR か通常 toast
+  if (prResult) {
+    setTimeout(() => showPRCelebration(savedName, prResult), 350);
+  } else {
+    showToast(`✓ ${savedName} を記録 · ⏱ ${formatTime(timerTotal)}スタート`);
+  }
 });
 
 document.getElementById('btnCancel').addEventListener('click',    closeLogModal);
@@ -953,18 +1330,20 @@ function renderHistoryTimeline() {
           const summary = validSets.length
             ? `${validSets.length}セット${avgR ? ` × ${avgR}回` : ''}${maxW ? ` × 最大${maxW}kg` : ''}`
             : 'セット未入力';
-          const color = log.exerciseColor || '#818cf8';
+          const color   = log.exerciseColor || '#818cf8';
+          const prs     = getStoredPRs();
+          const isLogPR = prs[log.exerciseName]?.logId === log.id;
           const setsHtml = log.sets.map((s,i) => `
             <tr>
               <td>Set ${i+1}</td>
               <td>${s.reps != null ? s.reps + ' 回' : '—'}</td>
               <td>${s.weight != null ? s.weight + ' kg' : '自重'}</td>
             </tr>`).join('');
-          return `<div class="log-card" data-id="${log.id}">
+          return `<div class="log-card${isLogPR?' style="border-color:rgba(250,204,21,.4)"':''}" data-id="${log.id}">
             <div class="log-card-header">
               <span class="log-cat-dot" style="background:${color}"></span>
               <div class="log-info">
-                <div class="log-ex-name">${log.exerciseName}</div>
+                <div class="log-ex-name">${log.exerciseName}${isLogPR?'<span class="pr-history-tag">🏆 PR</span>':''}</div>
                 <div class="log-summary">${summary}</div>
               </div>
               <span class="log-chevron">▶</span>
