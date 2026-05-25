@@ -225,12 +225,13 @@
       flex-shrink: 0;
     }
     .log-card.expanded .log-chevron { transform: rotate(90deg); }
-    .log-delete-btn {
+    .log-delete-btn, .log-edit-btn {
       background: none; border: 1.5px solid var(--border); border-radius: 7px;
       color: var(--text-sub); font-size: 11px; padding: 4px 8px;
       cursor: pointer; flex-shrink: 0; transition: all .2s;
     }
     .log-delete-btn:hover { border-color: #f87171; color: #f87171; }
+    .log-edit-btn:hover   { border-color: var(--accent); color: var(--accent); }
 
     /* Log detail (expanded) */
     .log-detail {
@@ -442,27 +443,6 @@
     .preset-btn.active { background: rgba(129,140,248,.18); border-color: var(--accent); color: var(--accent); }
     .preset-btn:hover   { border-color: var(--accent); color: var(--accent); }
 
-    /* Modal inline timer bar */
-    .modal-timer-bar {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 8px; padding: 10px 14px;
-      background: rgba(129,140,248,.1); border: 1.5px solid rgba(129,140,248,.35);
-      border-radius: 12px; animation: panel-slide-in .25s ease;
-    }
-    .modal-timer-bar.hidden { display: none; }
-    .modal-timer-ring-wrap {
-      position: relative; width: 44px; height: 44px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .modal-timer-ring-svg { width: 44px; height: 44px; position: absolute; }
-    .modal-timer-count {
-      position: relative; font-size: 11px; font-weight: 900;
-      color: var(--accent); z-index: 1; line-height: 1;
-    }
-    .modal-timer-info { display: flex; flex-direction: column; gap: 2px; }
-    .modal-timer-label { font-size: 12px; font-weight: 800; color: var(--accent); }
-    .modal-timer-sub   { font-size: 10px; color: var(--text-sub); }
-
     /* Custom time input */
     .timer-custom {
       margin-bottom: 12px; padding: 9px 10px 8px;
@@ -665,22 +645,6 @@
           <span>SET</span><span>回数</span><span>重量 (kg)</span><span></span>
         </div>
         <div id="setsContainer"></div>
-        <!-- インターバルタイマーバー（セット追加時に表示） -->
-        <div class="modal-timer-bar hidden" id="modalTimerBar">
-          <div class="modal-timer-ring-wrap">
-            <svg class="modal-timer-ring-svg" viewBox="0 0 36 36">
-              <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(129,140,248,.2)" stroke-width="3"/>
-              <circle cx="18" cy="18" r="14" fill="none" stroke="#818cf8" stroke-width="3"
-                stroke-dasharray="87.96" stroke-dashoffset="0" id="modalTimerRing"
-                transform="rotate(-90 18 18)"/>
-            </svg>
-            <span class="modal-timer-count" id="modalTimerCount">1:30</span>
-          </div>
-          <div class="modal-timer-info">
-            <span class="modal-timer-label">⏱ インターバル中</span>
-            <span class="modal-timer-sub">休憩が終わったら次のセットへ</span>
-          </div>
-        </div>
         <button class="add-set-btn" id="addSetBtn">＋ セットを追加</button>
       </div>
       <!-- Note -->
@@ -872,6 +836,9 @@ function addLog(log) {
 function deleteLog(id) {
   saveLogs(getLogs().filter(l => l.id !== id));
 }
+function updateLog(updatedLog) {
+  saveLogs(getLogs().map(l => l.id === updatedLog.id ? updatedLog : l));
+}
 function getLogCountForExercise(name) {
   return getLogs().filter(l => l.exerciseName === name).length;
 }
@@ -978,17 +945,6 @@ function updateTimerUI() {
     startBtn.classList.remove('paused');
   }
 
-  // モーダル内タイマーバーの更新
-  const modalBar  = document.getElementById('modalTimerBar');
-  const modalCount = document.getElementById('modalTimerCount');
-  const modalRing  = document.getElementById('modalTimerRing');
-  if (modalBar && modalCount) {
-    const MCIRC = 2 * Math.PI * 14; // r=14 in viewBox 36×36
-    modalCount.textContent = formatTime(timerRemain);
-    if (modalRing) modalRing.setAttribute('stroke-dashoffset', MCIRC * (1 - progress));
-    const modalOpen = document.getElementById('logModal').classList.contains('open');
-    modalBar.classList.toggle('hidden', !(timerRunning && modalOpen));
-  }
 }
 
 function timerFinished() {
@@ -1112,6 +1068,7 @@ let bodyView  = 'front';
 let searchQ   = '';
 let currentTab = 'training';
 let modalExercise = null;   // { name, cat }
+let editingLogId  = null;   // null=新規, string=編集中のlog.id
 const NS = 'http://www.w3.org/2000/svg';
 
 /* ───────────────────────────────────
@@ -1302,18 +1259,28 @@ function renderExercises() {
 /* ───────────────────────────────────
    LOG MODAL
 ─────────────────────────────────── */
-function openLogModal(name, cat, color) {
+function openLogModal(name, cat, color, existingLog = null) {
   modalExercise = { name, cat, color };
+  editingLogId  = existingLog ? existingLog.id : null;
   document.getElementById('modalTitle').textContent  = name;
   document.getElementById('modalCatDot').style.background = color;
-  // default date = today
-  const today = new Date().toISOString().slice(0,10);
-  document.getElementById('logDate').value = today;
-  document.getElementById('logNote').value = '';
-  // pre-fill sets from last log if exists
-  const lastLog = getLogs().find(l => l.exerciseName === name);
-  const initSets = lastLog ? lastLog.sets : [{ reps:'', weight:'' }];
-  renderSets(initSets);
+
+  if (existingLog) {
+    // 編集モード: 既存データをそのまま反映
+    document.getElementById('logDate').value = existingLog.date;
+    document.getElementById('logNote').value = existingLog.note || '';
+    renderSets(existingLog.sets);
+    document.getElementById('btnSave').textContent = '✓ 変更を保存';
+  } else {
+    // 新規モード
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('logDate').value = today;
+    document.getElementById('logNote').value = '';
+    const lastLog = getLogs().find(l => l.exerciseName === name);
+    renderSets(lastLog ? lastLog.sets : [{ reps:'', weight:'' }]);
+    document.getElementById('btnSave').textContent = '✓ 記録を保存';
+  }
+
   document.getElementById('logModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1322,12 +1289,7 @@ function closeLogModal() {
   document.getElementById('logModal').classList.remove('open');
   document.body.style.overflow = '';
   modalExercise = null;
-  // モーダル内バーを隠す
-  document.getElementById('modalTimerBar')?.classList.add('hidden');
-  // タイマーが動いていればパネルを表示
-  if (timerRunning) {
-    document.getElementById('timerPanel').classList.remove('hidden');
-  }
+  editingLogId  = null;
 }
 
 function renderSets(sets) {
@@ -1375,8 +1337,6 @@ document.getElementById('addSetBtn').addEventListener('click', () => {
   });
   container.appendChild(newDiv);
   newDiv.querySelector('.reps-input').focus();
-  // セット追加 = 直前のセットが完了 → インターバルタイマー自動スタート
-  timerAutoStart();
 });
 
 document.getElementById('btnSave').addEventListener('click', () => {
@@ -1387,7 +1347,7 @@ document.getElementById('btnSave').addEventListener('click', () => {
     return;
   }
   const log = {
-    id:            Date.now().toString(),
+    id:            editingLogId || Date.now().toString(),
     exerciseName:  modalExercise.name,
     exerciseCat:   modalExercise.cat,
     exerciseColor: modalExercise.color,
@@ -1395,18 +1355,26 @@ document.getElementById('btnSave').addEventListener('click', () => {
     sets,
     note:          document.getElementById('logNote').value.trim(),
   };
-  // ① PR チェック（addLog より前に実行して既存記録と比較）
-  const prResult   = checkAndUpdatePR(log);
-  const savedName  = modalExercise.name;
-  addLog(log);
-  closeLogModal();
-  renderExercises();
+  const savedName = modalExercise.name;
 
-  // ② PR か通常 toast
-  if (prResult) {
-    setTimeout(() => showPRCelebration(savedName, prResult), 350);
+  if (editingLogId) {
+    // 編集モード: 既存ログを上書き
+    updateLog(log);
+    closeLogModal();
+    renderExercises();
+    renderHistory();
+    showToast(`✏️ ${savedName} を更新しました`);
   } else {
-    showToast(`✓ ${savedName} を記録しました`);
+    // 新規モード
+    const prResult = checkAndUpdatePR(log);
+    addLog(log);
+    closeLogModal();
+    renderExercises();
+    if (prResult) {
+      setTimeout(() => showPRCelebration(savedName, prResult), 350);
+    } else {
+      showToast(`✓ ${savedName} を記録しました`);
+    }
   }
 });
 
@@ -1490,6 +1458,7 @@ function renderHistoryTimeline() {
                 <div class="log-summary">${summary}</div>
               </div>
               <span class="log-chevron">▶</span>
+              <button class="log-edit-btn"   data-id="${log.id}">編集</button>
               <button class="log-delete-btn" data-id="${log.id}">削除</button>
             </div>
             <div class="log-detail">
@@ -1508,7 +1477,17 @@ function renderHistoryTimeline() {
   tl.querySelectorAll('.log-card-header').forEach(header => {
     header.addEventListener('click', e => {
       if (e.target.classList.contains('log-delete-btn')) return;
+      if (e.target.classList.contains('log-edit-btn')) return;
       header.closest('.log-card').classList.toggle('expanded');
+    });
+  });
+  // edit
+  tl.querySelectorAll('.log-edit-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const log = getLogs().find(l => l.id === btn.dataset.id);
+      if (!log) return;
+      openLogModal(log.exerciseName, log.exerciseCat, log.exerciseColor, log);
     });
   });
   // delete
