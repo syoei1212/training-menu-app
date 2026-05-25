@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Training Menu</title>
+  <style>
+    :root {
+      --bg: #0c0c14;
+      --surface: #13131e;
+      --card: #1a1a28;
+      --card-hover: #22223a;
+      --border: #272740;
+      --text: #e8e8f0;
+      --text-sub: #6868a0;
+      --radius: 14px;
+      --accent: #818cf8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      min-height: 100vh; padding-bottom: 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 14px 16px 12px; position: sticky; top: 0; z-index: 50;
+    }
+    .header-inner { max-width: 720px; margin: 0 auto; }
+    .app-title {
+      font-size: 17px; font-weight: 800; letter-spacing: 2.5px;
+      background: linear-gradient(90deg, #818cf8, #c084fc);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 10px;
+    }
+    .search-wrap { position: relative; }
+    .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--text-sub); }
+    #searchInput {
+      width: 100%; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 9px 12px 9px 34px; color: var(--text);
+      font-size: 14px; outline: none; transition: border-color .2s;
+    }
+    #searchInput::placeholder { color: var(--text-sub); }
+    #searchInput:focus { border-color: var(--accent); }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex; max-width: 720px; margin: 0 auto;
+      padding: 10px 16px 0; gap: 6px;
+    }
+    .tab-btn {
+      flex: 1; padding: 9px 8px; border-radius: 10px;
+      background: var(--card); border: 1.5px solid var(--border);
+      color: var(--text-sub); font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all .2s; display: flex;
+      align-items: center; justify-content: center; gap: 5px;
+    }
+    .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Body Selector ── */
+    .selector-section { max-width: 720px; margin: 0 auto; padding: 20px 16px 0; }
+    .selector-heading { text-align: center; margin-bottom: 18px; }
+    .selector-heading h2 { font-size: 20px; font-weight: 800; margin-bottom: 5px; }
+    .selector-heading p { font-size: 13px; color: var(--text-sub); }
+    .view-toggle { display: flex; justify-content: center; gap: 0; margin-bottom: 16px; }
+    .view-btn {
+      background: var(--card); border: 1.5px solid var(--border);
+      padding: 7px 24px; font-size: 13px; font-weight: 700;
+      color: var(--text-sub); cursor: pointer; transition: all .2s;
+    }
+    .view-btn:first-child { border-radius: 20px 0 0 20px; border-right-width: .75px; }
+    .view-btn:last-child  { border-radius: 0 20px 20px 0; border-left-width: .75px; }
+    .view-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .diagram-layout { display: flex; gap: 14px; align-items: flex-start; justify-content: center; }
+    #bodyDiagram { flex-shrink: 0; width: 148px; height: auto; filter: drop-shadow(0 4px 24px rgba(0,0,0,.5)); }
+    .chips-list { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; flex: 1; min-width: 0; }
+    .muscle-chip {
+      display: flex; align-items: center; gap: 8px; padding: 8px 11px;
+      border-radius: 10px; background: var(--card); border: 1.5px solid var(--border);
+      cursor: pointer; transition: all .18s; min-width: 0; text-align: left;
+    }
+    .muscle-chip:hover { filter: brightness(1.15); }
+    .muscle-chip.active { background: var(--card-hover); }
+    .muscle-chip.dim { opacity: .3; }
+    .chip-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .chip-label { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chip-count { font-size: 10px; color: var(--text-sub); margin-left: auto; flex-shrink: 0; }
+    .selected-banner {
+      display: flex; align-items: center; gap: 12px; background: var(--card);
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      padding: 13px 15px; margin-top: 14px; transition: border-color .2s;
+    }
+    .selected-banner.hidden { display: none; }
+    .banner-icon { font-size: 26px; }
+    .banner-info { flex: 1; min-width: 0; }
+    .banner-name { font-size: 16px; font-weight: 800; }
+    .banner-desc { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+    .banner-right { text-align: center; flex-shrink: 0; }
+    .banner-count { font-size: 26px; font-weight: 800; }
+    .banner-count-label { font-size: 10px; color: var(--text-sub); }
+    .clear-btn {
+      background: none; border: 1.5px solid var(--border); border-radius: 8px;
+      color: var(--text-sub); font-size: 12px; padding: 5px 9px;
+      cursor: pointer; flex-shrink: 0; transition: all .2s;
+    }
+    .clear-btn:hover { border-color: var(--text-sub); color: var(--text); }
+
+    /* ── Exercise Section ── */
+    .exercises-section { max-width: 720px; margin: 20px auto 0; padding: 0 16px; }
+    .section-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid var(--border); padding-top: 18px; margin-bottom: 14px;
+    }
+    .section-bar-title { font-size: 15px; font-weight: 700; }
+    .section-bar-count { font-size: 12px; color: var(--text-sub); }
+    .exercise-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (min-width: 520px) { .exercise-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    /* Exercise card */
+    .exercise-card {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--radius); padding: 12px;
+      display: flex; flex-direction: column; gap: 5px;
+      transition: all .18s; position: relative; overflow: hidden;
+      user-select: none;
+    }
+    .exercise-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--accent-color, var(--accent));
+    }
+    .exercise-card:hover { border-color: var(--accent-color, var(--accent)); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+    .ex-cat-row { display: flex; align-items: center; gap: 5px; }
+    .ex-cat-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+    .ex-cat-label { font-size: 9px; font-weight: 700; }
+    .log-count-badge {
+      margin-left: auto; background: rgba(129,140,248,.15);
+      border: 1px solid rgba(129,140,248,.3); border-radius: 10px;
+      font-size: 9px; font-weight: 700; color: var(--accent);
+      padding: 1px 6px; display: none; align-items: center; gap: 2px;
+    }
+    .log-count-badge.show { display: flex; }
+    .ex-name { font-size: 13px; font-weight: 700; line-height: 1.35; margin-top: 1px; }
+    .ex-name-en { font-size: 10px; color: var(--text-sub); }
+    .ex-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+    .tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+    .tag-beginner     { background:#0d2b1a; color:#4ade80; }
+    .tag-intermediate { background:#2b2200; color:#facc15; }
+    .tag-advanced     { background:#2b0d0d; color:#f87171; }
+    .tag-barbell      { background:#0d200d; color:#86efac; }
+    .tag-dumbbell     { background:#160d2b; color:#c4b5fd; }
+    .tag-cable        { background:#2b1600; color:#fdba74; }
+    .tag-machine      { background:#1a0d2b; color:#e879f9; }
+    .tag-bodyweight   { background:#0d2020; color:#5eead4; }
+    .tag-free         { background:#1a1a2b; color:#93c5fd; }
+    .ex-actions {
+      display: flex; gap: 5px; margin-top: auto;
+      padding-top: 7px; border-top: 1px solid var(--border);
+    }
+    .btn-yt, .btn-log {
+      flex: 1; padding: 5px 4px; border-radius: 7px;
+      border: 1.5px solid var(--border); background: none;
+      font-size: 10px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 3px;
+      transition: all .18s; color: var(--text-sub);
+    }
+    .btn-yt:hover  { border-color: #ff4444; color: #ff4444; background: rgba(255,68,68,.07); }
+    .btn-log:hover { border-color: var(--accent-color, var(--accent)); color: var(--accent-color, var(--accent)); background: rgba(129,140,248,.07); }
+
+    /* ── History View ── */
+    .history-section { max-width: 720px; margin: 0 auto; padding: 16px 16px 0; }
+    .history-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px;
+    }
+    .stat-card {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--radius); padding: 14px 10px; text-align: center;
+    }
+    .stat-num { font-size: 24px; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: 10px; color: var(--text-sub); margin-top: 3px; }
+
+    .history-filter {
+      display: flex; gap: 8px; margin-bottom: 14px;
+    }
+    .hist-search {
+      flex: 1; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; color: var(--text); font-size: 13px; outline: none;
+    }
+    .hist-search::placeholder { color: var(--text-sub); }
+    .hist-search:focus { border-color: var(--accent); }
+
+    .history-empty { text-align: center; padding: 52px 20px; color: var(--text-sub); }
+    .history-empty-icon { font-size: 42px; margin-bottom: 12px; }
+    .history-empty p { font-size: 14px; line-height: 1.7; }
+
+    /* Day group */
+    .day-group { margin-bottom: 20px; }
+    .day-label {
+      font-size: 12px; font-weight: 700; color: var(--text-sub);
+      margin-bottom: 8px; padding-left: 2px;
+    }
+
+    /* Log card */
+    .log-card {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 8px;
+      transition: border-color .2s;
+    }
+    .log-card-header {
+      display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+      cursor: pointer;
+    }
+    .log-card-header:hover { background: var(--card-hover); }
+    .log-cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .log-info { flex: 1; min-width: 0; }
+    .log-ex-name { font-size: 14px; font-weight: 700; }
+    .log-summary { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+    .log-chevron {
+      font-size: 11px; color: var(--text-sub); transition: transform .2s;
+      flex-shrink: 0;
+    }
+    .log-card.expanded .log-chevron { transform: rotate(90deg); }
+    .log-delete-btn {
+      background: none; border: 1.5px solid var(--border); border-radius: 7px;
+      color: var(--text-sub); font-size: 11px; padding: 4px 8px;
+      cursor: pointer; flex-shrink: 0; transition: all .2s;
+    }
+    .log-delete-btn:hover { border-color: #f87171; color: #f87171; }
+
+    /* Log detail (expanded) */
+    .log-detail {
+      display: none; padding: 0 14px 12px; border-top: 1px solid var(--border);
+    }
+    .log-card.expanded .log-detail { display: block; }
+    .log-sets-table { width: 100%; border-collapse: collapse; margin: 10px 0 8px; }
+    .log-sets-table th {
+      font-size: 10px; color: var(--text-sub); font-weight: 600;
+      text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border);
+    }
+    .log-sets-table td { font-size: 12px; padding: 6px 6px; border-bottom: 1px solid rgba(255,255,255,.04); }
+    .log-sets-table tr:last-child td { border-bottom: none; }
+    .log-note-text {
+      font-size: 12px; color: var(--text-sub); background: rgba(255,255,255,.03);
+      border-radius: 8px; padding: 8px 10px; margin-top: 4px; line-height: 1.6;
+    }
+
+    /* ── Log Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: flex-end; justify-content: center;
+      pointer-events: none; opacity: 0; transition: opacity .25s;
+    }
+    .modal-overlay.open { pointer-events: all; opacity: 1; }
+    .modal-backdrop {
+      position: absolute; inset: 0; background: rgba(0,0,0,.6);
+      backdrop-filter: blur(4px);
+    }
+    .modal-sheet {
+      position: relative; z-index: 1; width: 100%; max-width: 560px;
+      background: var(--surface); border-radius: 22px 22px 0 0;
+      border: 1px solid var(--border); border-bottom: none;
+      max-height: 90vh; display: flex; flex-direction: column;
+      transform: translateY(100%); transition: transform .3s cubic-bezier(.32,.72,0,1);
+    }
+    .modal-overlay.open .modal-sheet { transform: translateY(0); }
+    .modal-grab { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+    .modal-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px 12px; flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-cat-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .modal-title { font-size: 16px; font-weight: 800; flex: 1; }
+    .modal-close-btn {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 50%; width: 28px; height: 28px;
+      color: var(--text-sub); font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .modal-body { overflow-y: auto; padding: 16px 18px; flex: 1; }
+    .form-row { margin-bottom: 16px; }
+    .form-label { font-size: 12px; font-weight: 700; color: var(--text-sub); margin-bottom: 7px; display: block; }
+    .date-input {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 9px 12px; color: var(--text);
+      font-size: 14px; outline: none; width: 100%;
+    }
+    .date-input:focus { border-color: var(--accent); }
+    /* Sets */
+    .sets-header {
+      display: grid; grid-template-columns: 36px 1fr 1fr 28px;
+      gap: 6px; padding: 0 4px 5px; margin-bottom: 4px;
+    }
+    .sets-header span { font-size: 10px; color: var(--text-sub); font-weight: 600; text-align: center; }
+    .sets-header span:first-child { text-align: left; }
+    .set-row {
+      display: grid; grid-template-columns: 36px 1fr 1fr 28px;
+      gap: 6px; align-items: center; margin-bottom: 7px;
+    }
+    .set-num-badge {
+      width: 28px; height: 28px; border-radius: 8px; background: rgba(129,140,248,.12);
+      border: 1px solid rgba(129,140,248,.25); color: var(--accent);
+      font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .set-input {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 9px; padding: 8px 10px; color: var(--text);
+      font-size: 14px; font-weight: 600; outline: none; text-align: center; width: 100%;
+    }
+    .set-input:focus { border-color: var(--accent); }
+    .set-input::placeholder { color: var(--text-sub); font-weight: 400; }
+    .set-delete-btn {
+      background: none; border: 1.5px solid var(--border); border-radius: 7px;
+      color: var(--text-sub); font-size: 13px; width: 28px; height: 28px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all .18s;
+    }
+    .set-delete-btn:hover { border-color: #f87171; color: #f87171; }
+    .add-set-btn {
+      width: 100%; padding: 9px; border-radius: 10px;
+      border: 1.5px dashed var(--border); background: none;
+      color: var(--text-sub); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .2s; margin-top: 4px;
+    }
+    .add-set-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .note-input {
+      width: 100%; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 12px; color: var(--text);
+      font-size: 13px; outline: none; resize: none; font-family: inherit;
+      line-height: 1.6; min-height: 72px;
+    }
+    .note-input::placeholder { color: var(--text-sub); }
+    .note-input:focus { border-color: var(--accent); }
+    /* Modal footer */
+    .modal-footer {
+      display: flex; gap: 8px; padding: 12px 18px 24px; flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+    .btn-cancel {
+      flex: 1; padding: 12px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: none;
+      color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .btn-save {
+      flex: 2; padding: 12px; border-radius: 12px;
+      border: none; background: var(--accent);
+      color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: filter .2s;
+    }
+    .btn-save:hover { filter: brightness(1.1); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1e293b; border: 1px solid #334155; border-radius: 40px;
+      padding: 10px 18px; font-size: 13px; font-weight: 600; color: #f1f5f9;
+      display: flex; align-items: center; gap: 7px;
+      opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Misc ── */
+    .empty { text-align: center; padding: 52px 20px; color: var(--text-sub); }
+    .empty-icon { font-size: 38px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-inner">
+    <div class="app-title">TRAINING MENU</div>
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input id="searchInput" type="search" placeholder="種目名で検索…" autocomplete="off">
+    </div>
+  </div>
+</header>
+
+<!-- ── Tab bar ── -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="training">🏋️ トレーニング</button>
+  <button class="tab-btn"        data-tab="history">📊 記録一覧</button>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW: Training
+════════════════════════════════════ -->
+<div id="view-training" class="view active">
+  <div class="selector-section">
+    <div class="selector-heading">
+      <h2>🎯 どこを鍛える？</h2>
+      <p>鍛えたい部位をタップ → その種目が表示されます</p>
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" data-view="front">前面</button>
+      <button class="view-btn"        data-view="back">背面</button>
+    </div>
+    <div class="diagram-layout">
+      <svg id="bodyDiagram" viewBox="0 0 120 272" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="chips-list" id="chipsList"></div>
+    </div>
+    <div class="selected-banner hidden" id="selectedBanner">
+      <div class="banner-icon" id="bIcon"></div>
+      <div class="banner-info">
+        <div class="banner-name" id="bName"></div>
+        <div class="banner-desc" id="bDesc"></div>
+      </div>
+      <div class="banner-right">
+        <div class="banner-count" id="bCount"></div>
+        <div class="banner-count-label">種目</div>
+      </div>
+      <button class="clear-btn" id="clearBtn">✕ 解除</button>
+    </div>
+  </div>
+  <div class="exercises-section">
+    <div class="section-bar">
+      <span class="section-bar-title" id="sectionTitle">全種目</span>
+      <span class="section-bar-count" id="sectionCount"></span>
+    </div>
+    <div id="exerciseGrid"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW: History
+════════════════════════════════════ -->
+<div id="view-history" class="view">
+  <div class="history-section">
+    <!-- Stats -->
+    <div class="history-stats" id="historyStats"></div>
+    <!-- Filter -->
+    <div class="history-filter">
+      <input class="hist-search" id="histSearch" type="search" placeholder="🔍 種目で絞り込み…" autocomplete="off">
+    </div>
+    <!-- Timeline -->
+    <div id="historyTimeline"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     LOG MODAL
+════════════════════════════════════ -->
+<div class="modal-overlay" id="logModal">
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <div class="modal-sheet">
+    <div class="modal-grab"></div>
+    <div class="modal-header">
+      <span class="modal-cat-dot" id="modalCatDot"></span>
+      <span class="modal-title" id="modalTitle"></span>
+      <button class="modal-close-btn" id="modalCloseBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Date -->
+      <div class="form-row">
+        <label class="form-label">📅 日付</label>
+        <input class="date-input" type="date" id="logDate">
+      </div>
+      <!-- Sets -->
+      <div class="form-row">
+        <label class="form-label">💪 セット記録</label>
+        <div class="sets-header">
+          <span>SET</span><span>回数</span><span>重量 (kg)</span><span></span>
+        </div>
+        <div id="setsContainer"></div>
+        <button class="add-set-btn" id="addSetBtn">＋ セットを追加</button>
+      </div>
+      <!-- Note -->
+      <div class="form-row">
+        <label class="form-label">📝 メモ（任意）</label>
+        <textarea class="note-input" id="logNote" placeholder="調子、感想、次回の目標など…" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="btnCancel">キャンセル</button>
+      <button class="btn-save"   id="btnSave">✓ 記録を保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════
+     SCRIPT
+════════════════════════════════════ -->
+<script>
+/* ───────────────────────────────────
+   DATA
+─────────────────────────────────── */
+const MUSCLES = [
+  { id:'chest',     label:'胸筋',       labelShort:'胸',    desc:'大胸筋・小胸筋',              icon:'💪', color:'#818cf8', views:['front'],        shapes:{ front:[{ t:'rect',    x:38, y:44, w:44, h:46, rx:7 }] } },
+  { id:'back',      label:'背中',       labelShort:'背中',  desc:'広背筋・僧帽筋・脊柱起立筋',  icon:'🏊', color:'#22d3ee', views:['back'],         shapes:{ back:[{ t:'rect', x:38, y:44, w:44, h:46, rx:7 },{ t:'rect', x:40, y:91, w:40, h:30, rx:6, opacity:.45 }] } },
+  { id:'shoulders', label:'肩',         labelShort:'肩',    desc:'三角筋（前部・中部・後部）',  icon:'🙆', color:'#a78bfa', views:['front','back'], shapes:{ front:[{ t:'ellipse', cx:28, cy:54, rx:15, ry:11 },{ t:'ellipse', cx:92, cy:54, rx:15, ry:11 }], back:[{ t:'ellipse', cx:28, cy:54, rx:15, ry:11 },{ t:'ellipse', cx:92, cy:54, rx:15, ry:11 }] } },
+  { id:'biceps',    label:'上腕二頭筋', labelShort:'二頭筋', desc:'上腕二頭筋（力こぶ）',        icon:'💪', color:'#f472b6', views:['front'],        shapes:{ front:[{ t:'rect', x:16, y:50, w:15, h:55, rx:7 },{ t:'rect', x:89, y:50, w:15, h:55, rx:7 }] } },
+  { id:'triceps',   label:'上腕三頭筋', labelShort:'三頭筋', desc:'上腕三頭筋（腕の裏側）',      icon:'🤸', color:'#fb923c', views:['back'],         shapes:{ back:[{ t:'rect', x:16, y:50, w:15, h:55, rx:7 },{ t:'rect', x:89, y:50, w:15, h:55, rx:7 }] } },
+  { id:'abs',       label:'腹筋・体幹', labelShort:'腹筋',  desc:'腹直筋・腹斜筋・体幹',        icon:'🔥', color:'#34d399', views:['front'],        shapes:{ front:[{ t:'rect', x:38, y:91, w:44, h:44, rx:7 }] } },
+  { id:'legs',      label:'脚',         labelShort:'脚',    desc:'大腿四頭筋・ハムストリング・臀筋', icon:'🦵', color:'#f97316', views:['front','back'], shapes:{ front:[{ t:'rect', x:37, y:149, w:20, h:59, rx:7 },{ t:'rect', x:63, y:149, w:20, h:59, rx:7 },{ t:'rect', x:38, y:210, w:18, h:47, rx:5, opacity:.55 },{ t:'rect', x:64, y:210, w:18, h:47, rx:5, opacity:.55 }], back:[{ t:'rect', x:37, y:149, w:20, h:59, rx:7 },{ t:'rect', x:63, y:149, w:20, h:59, rx:7 },{ t:'rect', x:38, y:210, w:18, h:47, rx:5, opacity:.55 },{ t:'rect', x:64, y:210, w:18, h:47, rx:5, opacity:.55 }] } },
+  { id:'cardio',    label:'有酸素',     labelShort:'有酸素', desc:'全身持久力・心肺機能',         icon:'🏃', color:'#ef4444', views:['front','back'], shapes:{} },
+];
+
+const EXERCISES = [
+  { name:'ベンチプレス',             nameEn:'Bench Press',            cat:'chest',    level:'intermediate', tools:['barbell'] },
+  { name:'ダンベルフライ',           nameEn:'Dumbbell Fly',           cat:'chest',    level:'beginner',     tools:['dumbbell'] },
+  { name:'プッシュアップ',           nameEn:'Push Up',                cat:'chest',    level:'beginner',     tools:['bodyweight'] },
+  { name:'インクラインベンチプレス', nameEn:'Incline Bench Press',    cat:'chest',    level:'intermediate', tools:['barbell'] },
+  { name:'ケーブルクロスオーバー',   nameEn:'Cable Crossover',        cat:'chest',    level:'intermediate', tools:['cable'] },
+  { name:'ディップス',               nameEn:'Dips',                   cat:'chest',    level:'intermediate', tools:['bodyweight'] },
+  { name:'ダンベルプレス',           nameEn:'Dumbbell Chest Press',   cat:'chest',    level:'beginner',     tools:['dumbbell'] },
+  { name:'ペックデック',             nameEn:'Pec Deck',               cat:'chest',    level:'beginner',     tools:['machine'] },
+  { name:'デッドリフト',             nameEn:'Deadlift',               cat:'back',     level:'advanced',     tools:['barbell'] },
+  { name:'ラットプルダウン',         nameEn:'Lat Pulldown',           cat:'back',     level:'beginner',     tools:['machine'] },
+  { name:'ベントオーバーロウ',       nameEn:'Bent Over Row',          cat:'back',     level:'intermediate', tools:['barbell'] },
+  { name:'チンアップ',               nameEn:'Chin Up',                cat:'back',     level:'intermediate', tools:['bodyweight'] },
+  { name:'シーテッドケーブルロウ',   nameEn:'Seated Cable Row',       cat:'back',     level:'beginner',     tools:['cable'] },
+  { name:'ワンハンドロウ',           nameEn:'One Arm Dumbbell Row',   cat:'back',     level:'beginner',     tools:['dumbbell'] },
+  { name:'プルアップ',               nameEn:'Pull Up',                cat:'back',     level:'advanced',     tools:['bodyweight'] },
+  { name:'Tバーロウ',               nameEn:'T-Bar Row',              cat:'back',     level:'intermediate', tools:['barbell'] },
+  { name:'スクワット',               nameEn:'Squat',                  cat:'legs',     level:'intermediate', tools:['barbell'] },
+  { name:'レッグプレス',             nameEn:'Leg Press',              cat:'legs',     level:'beginner',     tools:['machine'] },
+  { name:'ランジ',                   nameEn:'Lunge',                  cat:'legs',     level:'beginner',     tools:['dumbbell'] },
+  { name:'レッグカール',             nameEn:'Leg Curl',               cat:'legs',     level:'beginner',     tools:['machine'] },
+  { name:'レッグエクステンション',   nameEn:'Leg Extension',          cat:'legs',     level:'beginner',     tools:['machine'] },
+  { name:'カーフレイズ',             nameEn:'Calf Raise',             cat:'legs',     level:'beginner',     tools:['machine'] },
+  { name:'ブルガリアンスクワット',   nameEn:'Bulgarian Split Squat',  cat:'legs',     level:'intermediate', tools:['dumbbell'] },
+  { name:'ルーマニアンデッドリフト', nameEn:'Romanian Deadlift',      cat:'legs',     level:'intermediate', tools:['barbell'] },
+  { name:'ショルダープレス',         nameEn:'Shoulder Press',         cat:'shoulders',level:'intermediate', tools:['barbell'] },
+  { name:'サイドレイズ',             nameEn:'Lateral Raise',          cat:'shoulders',level:'beginner',     tools:['dumbbell'] },
+  { name:'フロントレイズ',           nameEn:'Front Raise',            cat:'shoulders',level:'beginner',     tools:['dumbbell'] },
+  { name:'リアデルトフライ',         nameEn:'Rear Delt Fly',          cat:'shoulders',level:'beginner',     tools:['dumbbell'] },
+  { name:'アップライトロウ',         nameEn:'Upright Row',            cat:'shoulders',level:'intermediate', tools:['barbell'] },
+  { name:'フェイスプル',             nameEn:'Face Pull',              cat:'shoulders',level:'beginner',     tools:['cable'] },
+  { name:'アーノルドプレス',         nameEn:'Arnold Press',           cat:'shoulders',level:'intermediate', tools:['dumbbell'] },
+  { name:'バーベルカール',           nameEn:'Barbell Curl',           cat:'biceps',   level:'beginner',     tools:['barbell'] },
+  { name:'ダンベルカール',           nameEn:'Dumbbell Curl',          cat:'biceps',   level:'beginner',     tools:['dumbbell'] },
+  { name:'ハンマーカール',           nameEn:'Hammer Curl',            cat:'biceps',   level:'beginner',     tools:['dumbbell'] },
+  { name:'インクラインカール',       nameEn:'Incline Dumbbell Curl',  cat:'biceps',   level:'intermediate', tools:['dumbbell'] },
+  { name:'ケーブルカール',           nameEn:'Cable Curl',             cat:'biceps',   level:'beginner',     tools:['cable'] },
+  { name:'コンセントレーションカール',nameEn:'Concentration Curl',    cat:'biceps',   level:'beginner',     tools:['dumbbell'] },
+  { name:'ナロウグリップベンチ',     nameEn:'Close Grip Bench Press', cat:'triceps',  level:'intermediate', tools:['barbell'] },
+  { name:'トライセプスプレスダウン', nameEn:'Triceps Pressdown',      cat:'triceps',  level:'beginner',     tools:['cable'] },
+  { name:'スカルクラッシャー',       nameEn:'Skull Crusher',          cat:'triceps',  level:'intermediate', tools:['barbell'] },
+  { name:'オーバーヘッドエクステンション',nameEn:'Overhead Triceps Extension',cat:'triceps',level:'beginner',tools:['dumbbell'] },
+  { name:'ディップス（三頭筋）',     nameEn:'Triceps Dips',           cat:'triceps',  level:'intermediate', tools:['bodyweight'] },
+  { name:'キックバック',             nameEn:'Triceps Kickback',       cat:'triceps',  level:'beginner',     tools:['dumbbell'] },
+  { name:'クランチ',                 nameEn:'Crunch',                 cat:'abs',      level:'beginner',     tools:['bodyweight'] },
+  { name:'プランク',                 nameEn:'Plank',                  cat:'abs',      level:'beginner',     tools:['bodyweight'] },
+  { name:'レッグレイズ',             nameEn:'Leg Raise',              cat:'abs',      level:'beginner',     tools:['bodyweight'] },
+  { name:'ロシアンツイスト',         nameEn:'Russian Twist',          cat:'abs',      level:'beginner',     tools:['bodyweight'] },
+  { name:'アブローラー',             nameEn:'Ab Wheel Rollout',       cat:'abs',      level:'advanced',     tools:['free'] },
+  { name:'バイシクルクランチ',       nameEn:'Bicycle Crunch',         cat:'abs',      level:'beginner',     tools:['bodyweight'] },
+  { name:'ケーブルクランチ',         nameEn:'Cable Crunch',           cat:'abs',      level:'intermediate', tools:['cable'] },
+  { name:'ドラゴンフラッグ',         nameEn:'Dragon Flag',            cat:'abs',      level:'advanced',     tools:['bodyweight'] },
+  { name:'トレッドミル',             nameEn:'Treadmill Run',          cat:'cardio',   level:'beginner',     tools:['machine'] },
+  { name:'エアロバイク',             nameEn:'Stationary Bike',        cat:'cardio',   level:'beginner',     tools:['machine'] },
+  { name:'ローイングマシン',         nameEn:'Rowing Machine',         cat:'cardio',   level:'beginner',     tools:['machine'] },
+  { name:'ジャンピングジャック',     nameEn:'Jumping Jack',           cat:'cardio',   level:'beginner',     tools:['bodyweight'] },
+  { name:'バーピー',                 nameEn:'Burpee',                 cat:'cardio',   level:'intermediate', tools:['bodyweight'] },
+  { name:'マウンテンクライマー',     nameEn:'Mountain Climber',       cat:'cardio',   level:'beginner',     tools:['bodyweight'] },
+];
+
+const TOOL_MAP = {
+  barbell:    { text:'バーベル', cls:'tag-barbell' },
+  dumbbell:   { text:'ダンベル', cls:'tag-dumbbell' },
+  cable:      { text:'ケーブル', cls:'tag-cable' },
+  machine:    { text:'マシン',   cls:'tag-machine' },
+  bodyweight: { text:'自重',     cls:'tag-bodyweight' },
+  free:       { text:'その他',   cls:'tag-free' },
+};
+const LEVEL_MAP = {
+  beginner:     { text:'初級', cls:'tag-beginner' },
+  intermediate: { text:'中級', cls:'tag-intermediate' },
+  advanced:     { text:'上級', cls:'tag-advanced' },
+};
+const DAYS_JA = ['日','月','火','水','木','金','土'];
+
+/* ───────────────────────────────────
+   STORAGE
+─────────────────────────────────── */
+function getLogs() {
+  try { return JSON.parse(localStorage.getItem('training_logs') || '[]'); } catch { return []; }
+}
+function saveLogs(logs) {
+  localStorage.setItem('training_logs', JSON.stringify(logs));
+}
+function addLog(log) {
+  const logs = getLogs();
+  logs.unshift(log);
+  saveLogs(logs);
+}
+function deleteLog(id) {
+  saveLogs(getLogs().filter(l => l.id !== id));
+}
+function getLogCountForExercise(name) {
+  return getLogs().filter(l => l.exerciseName === name).length;
+}
+
+/* ───────────────────────────────────
+   STATE
+─────────────────────────────────── */
+let selected  = null;
+let bodyView  = 'front';
+let searchQ   = '';
+let currentTab = 'training';
+let modalExercise = null;   // { name, cat }
+const NS = 'http://www.w3.org/2000/svg';
+
+/* ───────────────────────────────────
+   SVG BODY
+─────────────────────────────────── */
+function buildBodyBase() {
+  const FILL = '#1b1b2e', STR = '#35355a';
+  const mk = (tag, attrs) => {
+    const el = document.createElementNS(NS, tag);
+    Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
+    return el;
+  };
+  const g = document.createElementNS(NS, 'g');
+  g.id = 'bodyBase';
+  g.setAttribute('fill', FILL); g.setAttribute('stroke', STR); g.setAttribute('stroke-width','1');
+  [
+    { tag:'circle',  attrs:{ cx:60, cy:19, r:16 } },
+    { tag:'rect',    attrs:{ x:54, y:34, width:12, height:9,  rx:3 } },
+    { tag:'ellipse', attrs:{ cx:28, cy:54, rx:15, ry:11 } },
+    { tag:'ellipse', attrs:{ cx:92, cy:54, rx:15, ry:11 } },
+    { tag:'rect',    attrs:{ x:38, y:44, width:44, height:46, rx:7 } },
+    { tag:'rect',    attrs:{ x:38, y:90, width:44, height:46, rx:7 } },
+    { tag:'rect',    attrs:{ x:38, y:135, width:44, height:14, rx:5 } },
+    { tag:'rect',    attrs:{ x:16, y:48, width:15, height:58, rx:7 } },
+    { tag:'rect',    attrs:{ x:89, y:48, width:15, height:58, rx:7 } },
+    { tag:'rect',    attrs:{ x:11, y:107, width:13, height:40, rx:5 } },
+    { tag:'rect',    attrs:{ x:96, y:107, width:13, height:40, rx:5 } },
+    { tag:'ellipse', attrs:{ cx:17, cy:150, rx:7, ry:5 } },
+    { tag:'ellipse', attrs:{ cx:102,cy:150, rx:7, ry:5 } },
+    { tag:'rect',    attrs:{ x:37, y:149, width:20, height:60, rx:7 } },
+    { tag:'rect',    attrs:{ x:63, y:149, width:20, height:60, rx:7 } },
+    { tag:'rect',    attrs:{ x:38, y:211, width:18, height:46, rx:6 } },
+    { tag:'rect',    attrs:{ x:64, y:211, width:18, height:46, rx:6 } },
+    { tag:'ellipse', attrs:{ cx:47, cy:260, rx:10, ry:5 } },
+    { tag:'ellipse', attrs:{ cx:73, cy:260, rx:10, ry:5 } },
+  ].forEach(p => g.appendChild(mk(p.tag, p.attrs)));
+  if (bodyView === 'front') {
+    [{ cx:55,cy:17 },{ cx:65,cy:17 }].forEach(o => g.appendChild(mk('circle',{ cx:o.cx, cy:o.cy, r:2.5, fill:'#2e2e4a', stroke:'none' })));
+    g.appendChild(mk('path',{ d:'M55,25 Q60,28.5 65,25', fill:'none', stroke:'#2e2e4a', 'stroke-width':'1.5' }));
+    g.appendChild(mk('path',{ d:'M59,19 L58,23 Q60,24.5 62,23 L61,19', fill:'none', stroke:'#2e2e4a', 'stroke-width':'1' }));
+  } else {
+    g.appendChild(mk('path',{ d:'M45,12 Q60,6 75,12', fill:'none', stroke:'#2e2e4a', 'stroke-width':'3', 'stroke-linecap':'round' }));
+    g.appendChild(mk('line',{ x1:60, y1:43, x2:60, y2:134, stroke:'#2a2a45', 'stroke-width':'1.5', 'stroke-dasharray':'3,3' }));
+  }
+  return g;
+}
+
+function buildOverlays(svg) {
+  svg.querySelectorAll('.ov-group').forEach(el => el.remove());
+  MUSCLES.forEach(m => {
+    const shapes = m.shapes[bodyView];
+    if (!shapes || !shapes.length) return;
+    const isSel  = selected === m.id;
+    const isDim  = selected && !isSel;
+    const g = document.createElementNS(NS, 'g');
+    g.classList.add('ov-group'); g.dataset.muscle = m.id; g.style.cursor = 'pointer';
+    shapes.forEach(s => {
+      let el;
+      const fo = isDim ? 0.08 : isSel ? 0.7 : 0.22;
+      const so = isDim ? 0.08 : isSel ? 1.0 : 0.45;
+      const op = s.opacity !== undefined ? s.opacity : 1;
+      if (s.t === 'rect') {
+        el = document.createElementNS(NS, 'rect');
+        el.setAttribute('x',s.x); el.setAttribute('y',s.y);
+        el.setAttribute('width',s.w); el.setAttribute('height',s.h); el.setAttribute('rx',s.rx);
+      } else {
+        el = document.createElementNS(NS, 'ellipse');
+        el.setAttribute('cx',s.cx); el.setAttribute('cy',s.cy);
+        el.setAttribute('rx',s.rx); el.setAttribute('ry',s.ry);
+      }
+      el.setAttribute('fill',m.color); el.setAttribute('fill-opacity', fo*op);
+      el.setAttribute('stroke',m.color); el.setAttribute('stroke-width', isSel?2:1.5);
+      el.setAttribute('stroke-opacity', so);
+      g.appendChild(el);
+    });
+    // label
+    const s0 = shapes[0];
+    const tx = s0.t==='rect' ? s0.x+s0.w/2 : s0.cx;
+    const ty = s0.t==='rect' ? s0.y+s0.h/2+2.5 : s0.cy+2.5;
+    const lbl = document.createElementNS(NS,'text');
+    lbl.setAttribute('x',tx); lbl.setAttribute('y',ty); lbl.setAttribute('text-anchor','middle');
+    lbl.setAttribute('font-size', isSel?'7.5':'6.5'); lbl.setAttribute('font-weight','bold');
+    lbl.setAttribute('font-family','sans-serif'); lbl.setAttribute('pointer-events','none');
+    lbl.setAttribute('fill', isSel?'#fff':m.color); lbl.setAttribute('fill-opacity', isDim?0.2:0.9);
+    lbl.textContent = m.labelShort;
+    g.appendChild(lbl);
+    g.addEventListener('click', () => toggleMuscle(m.id));
+    svg.appendChild(g);
+  });
+}
+
+function rebuildSVG() {
+  const svg = document.getElementById('bodyDiagram');
+  svg.innerHTML = '';
+  svg.appendChild(buildBodyBase());
+  buildOverlays(svg);
+}
+
+/* ───────────────────────────────────
+   CHIPS & BANNER
+─────────────────────────────────── */
+function renderChips() {
+  const container = document.getElementById('chipsList');
+  container.innerHTML = MUSCLES.map(m => {
+    const vis = m.views.includes(bodyView);
+    const isSel = selected === m.id;
+    const count = EXERCISES.filter(ex => ex.cat === m.id).length;
+    return `<button class="muscle-chip${isSel?' active':''}${(!vis&&!isSel)?' dim':''}" data-muscle="${m.id}"
+      style="border-color:${isSel?m.color:''}; ${isSel?`box-shadow:0 0 0 1px ${m.color}44`:''}"
+      ><span class="chip-dot" style="background:${m.color}"></span
+      ><span class="chip-label" style="color:${isSel?m.color:''}">${m.label}</span
+      ><span class="chip-count">${count}種目</span></button>`;
+  }).join('');
+  container.querySelectorAll('.muscle-chip').forEach(btn =>
+    btn.addEventListener('click', () => toggleMuscle(btn.dataset.muscle))
+  );
+}
+
+function renderBanner() {
+  const banner = document.getElementById('selectedBanner');
+  if (!selected) { banner.classList.add('hidden'); return; }
+  const m = MUSCLES.find(d => d.id === selected);
+  if (!m) return;
+  const count = EXERCISES.filter(ex => ex.cat === selected).length;
+  banner.classList.remove('hidden');
+  banner.style.borderColor = m.color;
+  document.getElementById('bIcon').textContent = m.icon;
+  document.getElementById('bName').textContent = m.label;
+  document.getElementById('bName').style.color = m.color;
+  document.getElementById('bDesc').textContent = m.desc;
+  document.getElementById('bCount').textContent = count;
+  document.getElementById('bCount').style.color = m.color;
+}
+
+/* ───────────────────────────────────
+   EXERCISE CARDS
+─────────────────────────────────── */
+function renderExercises() {
+  let list = EXERCISES;
+  if (selected) list = list.filter(ex => ex.cat === selected);
+  if (searchQ)  list = list.filter(ex =>
+    ex.name.toLowerCase().includes(searchQ) ||
+    ex.nameEn.toLowerCase().includes(searchQ)
+  );
+  const m = selected ? MUSCLES.find(d => d.id === selected) : null;
+  document.getElementById('sectionTitle').textContent = m ? `${m.icon} ${m.label}の種目` : '全種目';
+  document.getElementById('sectionCount').textContent = `${list.length} 種目`;
+  const grid = document.getElementById('exerciseGrid');
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><p>該当する種目がありません</p></div>`;
+    return;
+  }
+  grid.innerHTML = `<div class="exercise-grid">${list.map(ex => {
+    const mu    = MUSCLES.find(d => d.id === ex.cat);
+    const color = mu ? mu.color : '#818cf8';
+    const lv    = LEVEL_MAP[ex.level];
+    const tools = ex.tools.map(t => { const tl=TOOL_MAP[t]||{text:t,cls:'tag-free'}; return `<span class="tag ${tl.cls}">${tl.text}</span>`; }).join('');
+    const logCount = getLogCountForExercise(ex.name);
+    return `<div class="exercise-card" style="--accent-color:${color}">
+      <div class="ex-cat-row">
+        <span class="ex-cat-dot" style="background:${color}"></span>
+        <span class="ex-cat-label" style="color:${color}">${mu?mu.labelShort:''}</span>
+        <span class="log-count-badge${logCount>0?' show':''}" title="${logCount}回記録済み">✓ ${logCount}</span>
+      </div>
+      <div class="ex-name">${ex.name}</div>
+      <div class="ex-name-en">${ex.nameEn}</div>
+      <div class="ex-tags"><span class="tag ${lv.cls}">${lv.text}</span>${tools}</div>
+      <div class="ex-actions">
+        <button class="btn-yt" data-url="https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+' やり方 筋トレ')}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="#ff4444"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.75 15.5V8.5l6.25 3.5-6.25 3.5z"/></svg>
+          動画
+        </button>
+        <button class="btn-log" data-name="${ex.name}" data-cat="${ex.cat}" data-color="${color}">✏️ 記録</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+
+  grid.querySelectorAll('.btn-yt').forEach(btn =>
+    btn.addEventListener('click', () => { try{window.open(btn.dataset.url,'_blank')}catch(e){} })
+  );
+  grid.querySelectorAll('.btn-log').forEach(btn =>
+    btn.addEventListener('click', () => openLogModal(btn.dataset.name, btn.dataset.cat, btn.dataset.color))
+  );
+}
+
+/* ───────────────────────────────────
+   LOG MODAL
+─────────────────────────────────── */
+function openLogModal(name, cat, color) {
+  modalExercise = { name, cat, color };
+  document.getElementById('modalTitle').textContent  = name;
+  document.getElementById('modalCatDot').style.background = color;
+  // default date = today
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('logDate').value = today;
+  document.getElementById('logNote').value = '';
+  // pre-fill sets from last log if exists
+  const lastLog = getLogs().find(l => l.exerciseName === name);
+  const initSets = lastLog ? lastLog.sets : [{ reps:'', weight:'' }];
+  renderSets(initSets);
+  document.getElementById('logModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLogModal() {
+  document.getElementById('logModal').classList.remove('open');
+  document.body.style.overflow = '';
+  modalExercise = null;
+}
+
+function renderSets(sets) {
+  const container = document.getElementById('setsContainer');
+  container.innerHTML = sets.map((s,i) => `
+    <div class="set-row" data-index="${i}">
+      <div class="set-num-badge">${i+1}</div>
+      <input class="set-input reps-input" type="number" min="1" placeholder="回数" value="${s.reps||''}" inputmode="numeric">
+      <input class="set-input weight-input" type="number" min="0" step="0.5" placeholder="kg" value="${s.weight||''}" inputmode="decimal">
+      <button class="set-delete-btn" title="削除">✕</button>
+    </div>`).join('');
+  container.querySelectorAll('.set-delete-btn').forEach((btn,i) => {
+    btn.addEventListener('click', () => {
+      const rows = [...container.querySelectorAll('.set-row')];
+      if (rows.length <= 1) return;
+      rows[i].remove();
+      // re-number
+      container.querySelectorAll('.set-num-badge').forEach((b,j) => b.textContent = j+1);
+    });
+  });
+}
+
+function getModalSets() {
+  return [...document.querySelectorAll('#setsContainer .set-row')].map(row => ({
+    reps:   parseFloat(row.querySelector('.reps-input').value)   || null,
+    weight: parseFloat(row.querySelector('.weight-input').value) || null,
+  }));
+}
+
+document.getElementById('addSetBtn').addEventListener('click', () => {
+  const container = document.getElementById('setsContainer');
+  const count = container.querySelectorAll('.set-row').length;
+  const newDiv = document.createElement('div');
+  newDiv.className = 'set-row'; newDiv.dataset.index = count;
+  newDiv.innerHTML = `
+    <div class="set-num-badge">${count+1}</div>
+    <input class="set-input reps-input" type="number" min="1" placeholder="回数" inputmode="numeric">
+    <input class="set-input weight-input" type="number" min="0" step="0.5" placeholder="kg" inputmode="decimal">
+    <button class="set-delete-btn" title="削除">✕</button>`;
+  newDiv.querySelector('.set-delete-btn').addEventListener('click', () => {
+    const rows = container.querySelectorAll('.set-row');
+    if (rows.length <= 1) return;
+    newDiv.remove();
+    container.querySelectorAll('.set-num-badge').forEach((b,j) => b.textContent = j+1);
+  });
+  container.appendChild(newDiv);
+  newDiv.querySelector('.reps-input').focus();
+});
+
+document.getElementById('btnSave').addEventListener('click', () => {
+  if (!modalExercise) return;
+  const sets = getModalSets();
+  if (!sets.some(s => s.reps || s.weight)) {
+    showToast('⚠️ 少なくとも1セット入力してください');
+    return;
+  }
+  const log = {
+    id:           Date.now().toString(),
+    exerciseName: modalExercise.name,
+    exerciseCat:  modalExercise.cat,
+    exerciseColor:modalExercise.color,
+    date:         document.getElementById('logDate').value,
+    sets,
+    note:         document.getElementById('logNote').value.trim(),
+  };
+  addLog(log);
+  closeLogModal();
+  renderExercises();        // refresh badge counts
+  showToast(`✓ ${modalExercise.name} の記録を保存しました`);
+});
+
+document.getElementById('btnCancel').addEventListener('click',    closeLogModal);
+document.getElementById('modalCloseBtn').addEventListener('click', closeLogModal);
+document.getElementById('modalBackdrop').addEventListener('click', closeLogModal);
+
+/* ───────────────────────────────────
+   HISTORY VIEW
+─────────────────────────────────── */
+function renderHistory() {
+  renderHistoryStats();
+  renderHistoryTimeline();
+}
+
+function renderHistoryStats() {
+  const logs = getLogs();
+  const now  = new Date();
+  // week range (Mon–Sun)
+  const day  = now.getDay();
+  const diffToMon = (day === 0 ? -6 : 1 - day);
+  const mon  = new Date(now); mon.setDate(now.getDate() + diffToMon); mon.setHours(0,0,0,0);
+  const sun  = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+  const thisWeek = logs.filter(l => { const d=new Date(l.date); return d>=mon && d<=sun; }).length;
+  // most logged exercise
+  const freq = {};
+  logs.forEach(l => { freq[l.exerciseName] = (freq[l.exerciseName]||0)+1; });
+  const topEx = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('historyStats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${logs.length}</div><div class="stat-label">総記録数</div></div>
+    <div class="stat-card"><div class="stat-num">${thisWeek}</div><div class="stat-label">今週の記録</div></div>
+    <div class="stat-card"><div class="stat-num" style="font-size:14px;line-height:1.3">${topEx?topEx[0]:'—'}</div><div class="stat-label">人気種目</div></div>`;
+}
+
+function renderHistoryTimeline() {
+  const histSearch = document.getElementById('histSearch').value.trim().toLowerCase();
+  let logs = getLogs();
+  if (histSearch) logs = logs.filter(l => l.exerciseName.toLowerCase().includes(histSearch));
+  const tl = document.getElementById('historyTimeline');
+  if (!logs.length) {
+    tl.innerHTML = `<div class="history-empty">
+      <div class="history-empty-icon">📋</div>
+      <p>${histSearch ? '条件に一致する記録がありません' : 'まだ記録がありません。\nトレーニングタブから種目を選んで\n最初の記録をつけてみましょう！'}</p>
+    </div>`;
+    return;
+  }
+  // group by date
+  const groups = {};
+  logs.forEach(l => { (groups[l.date] = groups[l.date]||[]).push(l); });
+  tl.innerHTML = Object.entries(groups)
+    .sort(([a],[b]) => b.localeCompare(a))
+    .map(([date, dayLogs]) => {
+      const d = new Date(date + 'T00:00:00');
+      const label = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAYS_JA[d.getDay()]}）`;
+      return `<div class="day-group">
+        <div class="day-label">${label}</div>
+        ${dayLogs.map(log => {
+          const validSets = log.sets.filter(s => s.reps || s.weight);
+          const maxW = validSets.reduce((mx,s) => Math.max(mx, s.weight||0), 0);
+          const avgR = validSets.length
+            ? Math.round(validSets.reduce((s,r) => s+(r.reps||0),0) / validSets.length)
+            : 0;
+          const summary = validSets.length
+            ? `${validSets.length}セット${avgR ? ` × ${avgR}回` : ''}${maxW ? ` × 最大${maxW}kg` : ''}`
+            : 'セット未入力';
+          const color = log.exerciseColor || '#818cf8';
+          const setsHtml = log.sets.map((s,i) => `
+            <tr>
+              <td>Set ${i+1}</td>
+              <td>${s.reps != null ? s.reps + ' 回' : '—'}</td>
+              <td>${s.weight != null ? s.weight + ' kg' : '自重'}</td>
+            </tr>`).join('');
+          return `<div class="log-card" data-id="${log.id}">
+            <div class="log-card-header">
+              <span class="log-cat-dot" style="background:${color}"></span>
+              <div class="log-info">
+                <div class="log-ex-name">${log.exerciseName}</div>
+                <div class="log-summary">${summary}</div>
+              </div>
+              <span class="log-chevron">▶</span>
+              <button class="log-delete-btn" data-id="${log.id}">削除</button>
+            </div>
+            <div class="log-detail">
+              <table class="log-sets-table">
+                <thead><tr><th>セット</th><th>回数</th><th>重量</th></tr></thead>
+                <tbody>${setsHtml}</tbody>
+              </table>
+              ${log.note ? `<div class="log-note-text">📝 ${log.note}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+
+  // expand/collapse
+  tl.querySelectorAll('.log-card-header').forEach(header => {
+    header.addEventListener('click', e => {
+      if (e.target.classList.contains('log-delete-btn')) return;
+      header.closest('.log-card').classList.toggle('expanded');
+    });
+  });
+  // delete
+  tl.querySelectorAll('.log-delete-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!confirm('この記録を削除しますか？')) return;
+      deleteLog(btn.dataset.id);
+      renderHistory();
+      showToast('🗑 記録を削除しました');
+    });
+  });
+}
+
+/* ───────────────────────────────────
+   TOAST
+─────────────────────────────────── */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ───────────────────────────────────
+   CONTROLLER
+─────────────────────────────────── */
+function toggleMuscle(id) {
+  selected = (selected === id) ? null : id;
+  const m = MUSCLES.find(d => d.id === id);
+  if (selected && m && !m.views.includes(bodyView)) {
+    bodyView = m.views[0];
+    document.querySelectorAll('.view-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.view === bodyView)
+    );
+  }
+  renderTraining();
+  if (selected) setTimeout(() => document.getElementById('exerciseGrid').scrollIntoView({ behavior:'smooth', block:'start' }), 150);
+}
+
+function renderTraining() {
+  rebuildSVG(); renderChips(); renderBanner(); renderExercises();
+}
+
+/* ───────────────────────────────────
+   EVENTS
+─────────────────────────────────── */
+// view toggle (front/back)
+document.querySelectorAll('.view-btn').forEach(btn =>
+  btn.addEventListener('click', () => {
+    bodyView = btn.dataset.view;
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === bodyView));
+    renderTraining();
+  })
+);
+// clear selection
+document.getElementById('clearBtn').addEventListener('click', () => { selected = null; renderTraining(); });
+// exercise search
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQ = e.target.value.trim().toLowerCase(); renderExercises();
+});
+// history search
+document.getElementById('histSearch').addEventListener('input', renderHistoryTimeline);
+// tabs
+document.querySelectorAll('.tab-btn').forEach(btn =>
+  btn.addEventListener('click', () => {
+    currentTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+    document.getElementById('view-training').classList.toggle('active', currentTab === 'training');
+    document.getElementById('view-history').classList.toggle('active',  currentTab === 'history');
+    document.querySelector('header .search-wrap').style.display = currentTab === 'training' ? '' : 'none';
+    if (currentTab === 'history') renderHistory();
+  })
+);
+
+/* ───────────────────────────────────
+   INIT
+─────────────────────────────────── */
+renderTraining();
+</script>
+</body>
+</html>
