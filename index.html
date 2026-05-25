@@ -428,7 +428,7 @@
     @keyframes num-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
 
     /* Presets */
-    .timer-presets { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; margin-bottom: 12px; }
+    .timer-presets { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; margin-bottom: 10px; }
     .preset-btn {
       padding: 6px 2px; border-radius: 8px;
       background: var(--card); border: 1.5px solid var(--border);
@@ -436,6 +436,38 @@
     }
     .preset-btn.active { background: rgba(129,140,248,.18); border-color: var(--accent); color: var(--accent); }
     .preset-btn:hover   { border-color: var(--accent); color: var(--accent); }
+
+    /* Custom time input */
+    .timer-custom {
+      margin-bottom: 12px; padding: 9px 10px 8px;
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 11px;
+    }
+    .timer-custom-label {
+      display: block; font-size: 9px; font-weight: 700;
+      color: var(--text-sub); letter-spacing: .06em; margin-bottom: 8px;
+    }
+    .timer-custom-row { display: flex; align-items: center; gap: 5px; }
+    .timer-spin-group { display: flex; align-items: center; gap: 3px; flex: 1; }
+    .timer-spin-btn {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s; flex-shrink: 0; line-height: 1;
+    }
+    .timer-spin-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .timer-spin-val {
+      flex: 1; text-align: center;
+      font-size: 12px; font-weight: 800; color: var(--text); white-space: nowrap;
+    }
+    .timer-custom-sep { font-size: 14px; font-weight: 800; color: var(--text-sub); flex-shrink: 0; }
+    .timer-custom-set {
+      padding: 6px 9px; border-radius: 8px;
+      background: var(--accent); border: none;
+      color: #fff; font-size: 11px; font-weight: 800;
+      cursor: pointer; transition: opacity .15s; flex-shrink: 0;
+    }
+    .timer-custom-set:hover { opacity: .85; }
 
     /* Controls */
     .timer-controls { display: flex; gap: 7px; }
@@ -642,6 +674,25 @@
       <button class="preset-btn active" data-sec="90">90秒</button>
       <button class="preset-btn" data-sec="120">2分</button>
       <button class="preset-btn" data-sec="180">3分</button>
+      <button class="preset-btn" data-sec="240">4分</button>
+      <button class="preset-btn" data-sec="300">5分</button>
+    </div>
+    <div class="timer-custom">
+      <span class="timer-custom-label">⏱ カスタム時間</span>
+      <div class="timer-custom-row">
+        <div class="timer-spin-group">
+          <button class="timer-spin-btn" id="customMinDown">−</button>
+          <span class="timer-spin-val"><span id="customMin">0</span>分</span>
+          <button class="timer-spin-btn" id="customMinUp">＋</button>
+        </div>
+        <span class="timer-custom-sep">:</span>
+        <div class="timer-spin-group">
+          <button class="timer-spin-btn" id="customSecDown">−</button>
+          <span class="timer-spin-val"><span id="customSec">30</span>秒</span>
+          <button class="timer-spin-btn" id="customSecUp">＋</button>
+        </div>
+        <button class="timer-custom-set" id="customSetBtn">セット</button>
+      </div>
     </div>
     <div class="timer-controls">
       <button class="timer-reset-btn" id="timerResetBtn">↺</button>
@@ -964,6 +1015,36 @@ document.querySelectorAll('.preset-btn').forEach(btn =>
     updateTimerUI();
   })
 );
+
+// Custom time input
+let customMinVal = 0, customSecVal = 30;
+function updateCustomUI() {
+  document.getElementById('customMin').textContent = customMinVal;
+  document.getElementById('customSec').textContent = String(customSecVal).padStart(2,'0');
+}
+document.getElementById('customMinDown').addEventListener('click', () => {
+  if (customMinVal > 0) { customMinVal--; updateCustomUI(); }
+});
+document.getElementById('customMinUp').addEventListener('click', () => {
+  if (customMinVal < 99) { customMinVal++; updateCustomUI(); }
+});
+document.getElementById('customSecDown').addEventListener('click', () => {
+  customSecVal = Math.max(0, customSecVal - 5);
+  updateCustomUI();
+});
+document.getElementById('customSecUp').addEventListener('click', () => {
+  customSecVal = Math.min(55, customSecVal + 5);
+  updateCustomUI();
+});
+document.getElementById('customSetBtn').addEventListener('click', () => {
+  const total = customMinVal * 60 + customSecVal;
+  if (total < 5) { showToast('⚠ 5秒以上で設定してください'); return; }
+  timerTotal = timerRemain = total;
+  timerRunning = false; clearInterval(timerTick); timerTick = null;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  updateTimerUI();
+});
+
 updateTimerUI();   // init display
 
 /* ───────────────────────────────────
