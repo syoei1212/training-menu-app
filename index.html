@@ -621,6 +621,47 @@
     .streak-card.best { background: linear-gradient(135deg,rgba(250,204,21,.08),rgba(234,179,8,.03)); border-color: rgba(250,204,21,.25); }
     .streak-card.best .streak-num { color: #facc15; }
 
+    /* ── Warm-up Suggestion ── */
+    .warmup-suggest {
+      background: rgba(251,146,60,.05);
+      border: 1.5px solid rgba(251,146,60,.22);
+      border-radius: 12px; padding: 11px 13px;
+      margin: 10px 0 2px;
+    }
+    .warmup-suggest-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 9px;
+    }
+    .warmup-suggest-title {
+      font-size: 12px; font-weight: 800; color: #fb923c;
+      letter-spacing: .04em;
+    }
+    .warmup-suggest-base {
+      font-size: 11px; color: var(--text-sub);
+    }
+    .warmup-rows { display: flex; flex-direction: column; gap: 0; }
+    .warmup-row {
+      display: grid;
+      grid-template-columns: 30px 60px 52px 1fr;
+      align-items: center; gap: 6px;
+      padding: 5px 0;
+      border-top: 1px solid rgba(255,255,255,.05);
+    }
+    .warmup-badge {
+      font-size: 9px; font-weight: 800; color: #fb923c;
+      background: rgba(251,146,60,.14); border-radius: 4px;
+      padding: 2px 3px; text-align: center; letter-spacing: .02em;
+    }
+    .warmup-kg {
+      font-size: 14px; font-weight: 700; color: var(--text);
+    }
+    .warmup-reps { font-size: 12px; color: var(--text-sub); }
+    .warmup-label {
+      font-size: 10px; color: var(--text-sub);
+      background: var(--card); border-radius: 5px;
+      padding: 2px 6px; text-align: center; justify-self: start;
+    }
+
     /* ── Weight Suggestion ── */
     .weight-suggest {
       display: flex; align-items: flex-start; gap: 8px;
@@ -1017,6 +1058,14 @@
         </div>
         <div id="setsContainer"></div>
         <button class="add-set-btn" id="addSetBtn">＋ セットを追加</button>
+        <!-- Warm-up Suggestion -->
+        <div id="warmupSuggest" class="warmup-suggest" style="display:none">
+          <div class="warmup-suggest-hd">
+            <span class="warmup-suggest-title">🔥 ウォームアップ提案</span>
+            <span class="warmup-suggest-base" id="warmupBase"></span>
+          </div>
+          <div class="warmup-rows" id="warmupRows"></div>
+        </div>
       </div>
       <!-- Note -->
       <div class="form-row">
@@ -2077,6 +2126,9 @@ function openLogModal(name, cat, color, existingLog = null) {
     suggestEl.style.display = 'none';
   }
 
+  // ウォームアップ提案をリセット（既存ログ編集時は重量から再計算）
+  renderWarmupSuggest();
+
   document.getElementById('logModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -2086,6 +2138,44 @@ function closeLogModal() {
   document.body.style.overflow = '';
   modalExercise = null;
   editingLogId  = null;
+}
+
+/* ───────────────────────────────────
+   WARM-UP SUGGESTION
+─────────────────────────────────── */
+function calcWarmup(mainWeight) {
+  const r25 = w => Math.round(w / 2.5) * 2.5;  // 2.5kg単位で丸める
+  return [
+    { pct: 50, reps: 10, label: 'アクティベーション' },
+    { pct: 70, reps: 5,  label: 'ライトセット' },
+    { pct: 85, reps: 2,  label: 'ヘビーセット' },
+  ].map((s, i) => ({
+    tag:    `W${i + 1}`,
+    weight: r25(mainWeight * s.pct / 100),
+    reps:   s.reps,
+    pct:    s.pct,
+    label:  s.label,
+  }));
+}
+
+function renderWarmupSuggest() {
+  const weights = [...document.querySelectorAll('#setsContainer .weight-input')]
+    .map(inp => parseFloat(inp.value) || 0);
+  const maxW = Math.max(...weights, 0);
+  const el   = document.getElementById('warmupSuggest');
+
+  if (maxW < 20) { el.style.display = 'none'; return; }
+
+  const sets = calcWarmup(maxW);
+  document.getElementById('warmupBase').textContent  = `基準 ${maxW} kg`;
+  document.getElementById('warmupRows').innerHTML    = sets.map(s => `
+    <div class="warmup-row">
+      <span class="warmup-badge">${s.tag}</span>
+      <span class="warmup-kg">${s.weight} kg</span>
+      <span class="warmup-reps">× ${s.reps}回</span>
+      <span class="warmup-label">${s.pct}% — ${s.label}</span>
+    </div>`).join('');
+  el.style.display = '';
 }
 
 function renderSets(sets) {
@@ -2114,6 +2204,11 @@ function getModalSets() {
     weight: parseFloat(row.querySelector('.weight-input').value) || null,
   }));
 }
+
+// weight 入力のたびにウォームアップ提案を更新（イベント委譲）
+document.getElementById('setsContainer').addEventListener('input', e => {
+  if (e.target.classList.contains('weight-input')) renderWarmupSuggest();
+});
 
 document.getElementById('addSetBtn').addEventListener('click', () => {
   const container = document.getElementById('setsContainer');
