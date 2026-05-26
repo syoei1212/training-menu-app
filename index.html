@@ -7,6 +7,13 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Training Menu</title>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0c0c14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TrainingMenu">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <style>
     :root {
       --bg: #0c0c14;
@@ -591,6 +598,170 @@
       85%  { opacity: 1; }
       100% { transform: translateY(105vh)  rotate(800deg); opacity: 0; }
     }
+
+    /* ── Training Streak ── */
+    .streak-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+    }
+    .streak-card {
+      background: linear-gradient(135deg,rgba(251,146,60,.1),rgba(249,115,22,.04));
+      border: 1.5px solid rgba(251,146,60,.28); border-radius: var(--radius);
+      padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .streak-fire { font-size: 26px; }
+    .streak-num  { font-size: 22px; font-weight: 800; color: #fb923c; line-height: 1; }
+    .streak-label{ font-size: 10px; color: var(--text-sub); margin-top: 2px; }
+    .streak-card.best { background: linear-gradient(135deg,rgba(250,204,21,.08),rgba(234,179,8,.03)); border-color: rgba(250,204,21,.25); }
+    .streak-card.best .streak-num { color: #facc15; }
+
+    /* ── Weight Suggestion ── */
+    .weight-suggest {
+      display: flex; align-items: flex-start; gap: 8px;
+      background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.2);
+      border-radius: 9px; padding: 8px 10px; margin-bottom: 2px;
+    }
+    .weight-suggest-icon { font-size: 15px; flex-shrink: 0; padding-top: 1px; }
+    .weight-suggest-body { font-size: 11px; line-height: 1.6; color: var(--text-sub); }
+    .weight-suggest-val  { color: var(--accent); font-weight: 700; }
+
+    /* ── Template Section ── */
+    .template-section { max-width: 720px; margin: 16px auto 0; padding: 0 16px; }
+    .template-section-label {
+      font-size: 11px; font-weight: 700; color: var(--text-sub);
+      letter-spacing: .5px; margin-bottom: 7px;
+    }
+    .template-scroll {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .template-scroll::-webkit-scrollbar { display: none; }
+    .template-card {
+      flex-shrink: 0; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 9px 13px; cursor: pointer;
+      transition: all .18s; text-align: center; min-width: 74px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+    }
+    .template-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .template-card.active { background: rgba(129,140,248,.15); border-color: var(--accent); }
+    .template-card-icon { font-size: 22px; }
+    .template-card-name { font-size: 10px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
+    .template-card.active .template-card-name { color: var(--accent); }
+    .template-active-bar {
+      display: flex; align-items: center; gap: 8px; margin-top: 8px;
+      background: rgba(129,140,248,.07); border: 1px dashed rgba(129,140,248,.3);
+      border-radius: 8px; padding: 6px 10px; font-size: 11px;
+    }
+    .template-active-name { color: var(--accent); font-weight: 700; flex: 1; }
+    .template-clear-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-sub); font-size: 12px; padding: 0 2px;
+    }
+    .template-clear-btn:hover { color: var(--text); }
+
+    /* ── Custom Exercise Card ── */
+    .custom-ex-badge {
+      font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px;
+      background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.3);
+      color: #34d399; margin-left: 2px;
+    }
+    .ex-delete-btn {
+      position: absolute; top: 5px; right: 5px; z-index: 2;
+      background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3);
+      border-radius: 5px; color: #f87171; font-size: 10px; padding: 2px 5px;
+      cursor: pointer; opacity: 0; transition: opacity .15s;
+    }
+    .exercise-card:hover .ex-delete-btn { opacity: 1; }
+    .add-custom-ex-card {
+      background: var(--card); border: 1.5px dashed var(--border);
+      border-radius: var(--radius); padding: 14px; grid-column: 1 / -1;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      cursor: pointer; transition: all .18s; color: var(--text-sub);
+      font-size: 13px; font-weight: 600;
+    }
+    .add-custom-ex-card:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Custom Exercise Modal ── */
+    .cex-modal-overlay {
+      position: fixed; inset: 0; z-index: 250;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .cex-modal-overlay.open { opacity: 1; pointer-events: all; }
+    .cex-modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+    }
+    .cex-modal-sheet {
+      position: relative; z-index: 1; width: 100%; max-width: 480px;
+      background: var(--surface); border-radius: 24px 24px 0 0;
+      padding: 12px 20px 36px; max-height: 88vh; overflow-y: auto;
+      transform: translateY(100%); transition: transform .3s cubic-bezier(.32,.72,0,1);
+    }
+    .cex-modal-overlay.open .cex-modal-sheet { transform: translateY(0); }
+    .cex-grab {
+      width: 36px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 0 auto 16px;
+    }
+    .cex-title { font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 18px; }
+    .cex-form-row { margin-bottom: 13px; }
+    .cex-label {
+      font-size: 11px; color: var(--text-sub); font-weight: 700;
+      margin-bottom: 5px; display: block;
+    }
+    .cex-input, .cex-select {
+      width: 100%; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 9px 12px; color: var(--text);
+      font-size: 14px; outline: none; transition: border-color .2s;
+    }
+    .cex-input:focus, .cex-select:focus { border-color: var(--accent); }
+    .cex-select {
+      -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236868a0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 32px;
+    }
+    .cex-footer { display: flex; gap: 10px; margin-top: 20px; }
+    .cex-btn-cancel, .cex-btn-save {
+      flex: 1; padding: 12px; border-radius: 12px;
+      font-size: 14px; font-weight: 700; cursor: pointer; border: none;
+    }
+    .cex-btn-cancel { background: var(--card); color: var(--text-sub); border: 1.5px solid var(--border); }
+    .cex-btn-save   { background: var(--accent); color: #fff; }
+
+    /* ── Custom Template Create Modal ── */
+    .ctpl-ex-list {
+      max-height: 220px; overflow-y: auto; border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 4px 0;
+    }
+    .ctpl-ex-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px; cursor: pointer; transition: background .1s;
+    }
+    .ctpl-ex-item:hover { background: var(--card-hover); }
+    .ctpl-ex-item input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+    .ctpl-ex-item-name { font-size: 13px; }
+
+    /* ── PWA Install Banner ── */
+    .pwa-banner {
+      position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
+      background: var(--surface); border: 1.5px solid var(--accent);
+      border-radius: 14px; padding: 12px 16px; z-index: 190;
+      display: flex; align-items: center; gap: 10px; max-width: 340px; width: calc(100% - 32px);
+      box-shadow: 0 4px 24px rgba(0,0,0,.4);
+      animation: slide-up .35s cubic-bezier(.32,.72,0,1);
+    }
+    @keyframes slide-up { from{transform:translateX(-50%) translateY(20px);opacity:0} to{transform:translateX(-50%) translateY(0);opacity:1} }
+    .pwa-banner-text { flex: 1; font-size: 12px; line-height: 1.5; }
+    .pwa-banner-title { font-weight: 700; font-size: 13px; margin-bottom: 1px; }
+    .pwa-install-btn {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; padding: 7px 13px; font-size: 12px; font-weight: 700;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .pwa-dismiss-btn {
+      background: none; border: none; color: var(--text-sub);
+      font-size: 18px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -644,6 +815,17 @@
       <button class="clear-btn" id="clearBtn">✕ 解除</button>
     </div>
   </div>
+  <!-- ── Quick Start Templates ── -->
+  <div class="template-section">
+    <div class="template-section-label">⚡ クイックスタート</div>
+    <div class="template-scroll" id="templateScroll"></div>
+    <div class="template-active-bar" id="templateActiveBar" style="display:none">
+      <span>🏋️</span>
+      <span class="template-active-name" id="templateActiveName"></span>
+      <button class="template-clear-btn" id="templateClearBtn">✕ クリア</button>
+    </div>
+  </div>
+
   <div class="exercises-section">
     <div class="section-bar">
       <span class="section-bar-title" id="sectionTitle">全種目</span>
@@ -698,6 +880,12 @@
         <label class="form-label">📅 日付</label>
         <input class="date-input" type="date" id="logDate">
       </div>
+      <!-- Weight suggestion -->
+      <div id="weightSuggest" class="weight-suggest" style="display:none">
+        <span class="weight-suggest-icon">💡</span>
+        <div class="weight-suggest-body" id="weightSuggestText"></div>
+      </div>
+
       <!-- Sets -->
       <div class="form-row">
         <label class="form-label">💪 セット記録</label>
@@ -785,6 +973,84 @@
 
 <!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════
+     CUSTOM EXERCISE MODAL
+════════════════════════════════════ -->
+<div class="cex-modal-overlay" id="cexModal">
+  <div class="cex-modal-backdrop" id="cexBackdrop"></div>
+  <div class="cex-modal-sheet">
+    <div class="cex-grab"></div>
+    <div class="cex-title">＋ カスタム種目を追加</div>
+    <div class="cex-form-row">
+      <label class="cex-label">種目名 *</label>
+      <input class="cex-input" id="cexName" placeholder="例：ケーブルフライ">
+    </div>
+    <div class="cex-form-row">
+      <label class="cex-label">英語名（任意）</label>
+      <input class="cex-input" id="cexNameEn" placeholder="Cable Fly">
+    </div>
+    <div class="cex-form-row">
+      <label class="cex-label">部位 *</label>
+      <select class="cex-select" id="cexCat">
+        <option value="chest">💪 胸筋</option>
+        <option value="back">🏊 背中</option>
+        <option value="shoulders">🙆 肩</option>
+        <option value="biceps">💪 上腕二頭筋</option>
+        <option value="triceps">🤸 上腕三頭筋</option>
+        <option value="abs">🔥 腹筋・体幹</option>
+        <option value="legs">🦵 脚</option>
+        <option value="cardio">🏃 有酸素</option>
+      </select>
+    </div>
+    <div class="cex-form-row">
+      <label class="cex-label">難易度</label>
+      <select class="cex-select" id="cexLevel">
+        <option value="beginner">初級</option>
+        <option value="intermediate">中級</option>
+        <option value="advanced">上級</option>
+      </select>
+    </div>
+    <div class="cex-footer">
+      <button class="cex-btn-cancel" id="cexCancel">キャンセル</button>
+      <button class="cex-btn-save"   id="cexSave">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     CUSTOM TEMPLATE CREATE MODAL
+════════════════════════════════════ -->
+<div class="cex-modal-overlay" id="ctplModal">
+  <div class="cex-modal-backdrop" id="ctplBackdrop"></div>
+  <div class="cex-modal-sheet">
+    <div class="cex-grab"></div>
+    <div class="cex-title">📋 カスタムテンプレート作成</div>
+    <div class="cex-form-row">
+      <label class="cex-label">テンプレート名 *</label>
+      <input class="cex-input" id="ctplName" placeholder="例：マイ胸トレ">
+    </div>
+    <div class="cex-form-row">
+      <label class="cex-label">種目を選択（複数可）</label>
+      <div class="ctpl-ex-list" id="ctplExList"></div>
+    </div>
+    <div class="cex-footer">
+      <button class="cex-btn-cancel" id="ctplCancel">キャンセル</button>
+      <button class="cex-btn-save"   id="ctplSave">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PWA Install Banner ── -->
+<div class="pwa-banner" id="pwaBanner" style="display:none">
+  <span style="font-size:26px">📱</span>
+  <div class="pwa-banner-text">
+    <div class="pwa-banner-title">ホーム画面に追加</div>
+    アプリとしてインストールできます
+  </div>
+  <button class="pwa-install-btn" id="pwaInstallBtn">追加</button>
+  <button class="pwa-dismiss-btn" id="pwaDismissBtn">✕</button>
+</div>
 
 <!-- ══════════════════════════════════
      SCRIPT
@@ -901,6 +1167,209 @@ function updateLog(updatedLog) {
 }
 function getLogCountForExercise(name) {
   return getLogs().filter(l => l.exerciseName === name).length;
+}
+
+/* ───────────────────────────────────
+   CUSTOM EXERCISES
+─────────────────────────────────── */
+function getCustomExercises() {
+  try { return JSON.parse(localStorage.getItem('custom_exercises') || '[]'); } catch { return []; }
+}
+function saveCustomExercises(exs) { localStorage.setItem('custom_exercises', JSON.stringify(exs)); }
+function addCustomExercise(ex)    { const exs = getCustomExercises(); exs.push(ex); saveCustomExercises(exs); }
+function deleteCustomExercise(id) { saveCustomExercises(getCustomExercises().filter(e => e.id !== id)); }
+function getAllExercises()         { return [...EXERCISES, ...getCustomExercises()]; }
+
+/* ───────────────────────────────────
+   TEMPLATES
+─────────────────────────────────── */
+const BUILT_IN_TEMPLATES = [
+  { id:'push',   icon:'💪', name:'プッシュデイ',   exercises:['ベンチプレス','インクラインベンチプレス','ダンベルフライ','ショルダープレス','サイドレイズ','トライセプスプレスダウン'] },
+  { id:'pull',   icon:'🏊', name:'プルデイ',       exercises:['デッドリフト','ラットプルダウン','ベントオーバーロウ','チンアップ','バーベルカール','ダンベルカール'] },
+  { id:'legs',   icon:'🦵', name:'レッグデイ',     exercises:['スクワット','レッグプレス','ランジ','ルーマニアンデッドリフト','カーフレイズ'] },
+  { id:'full',   icon:'🔥', name:'全身',           exercises:['スクワット','ベンチプレス','デッドリフト','ショルダープレス','プルアップ','プランク'] },
+  { id:'cardio', icon:'🏃', name:'有酸素',         exercises:['ランニング','エアロバイク','縄跳び','バーピー','マウンテンクライマー'] },
+];
+function getCustomTemplates() {
+  try { return JSON.parse(localStorage.getItem('custom_templates') || '[]'); } catch { return []; }
+}
+function saveCustomTemplates(t) { localStorage.setItem('custom_templates', JSON.stringify(t)); }
+function getAllTemplates()       { return [...BUILT_IN_TEMPLATES, ...getCustomTemplates()]; }
+
+let activeTemplateId = null;
+
+function activateTemplate(id) {
+  activeTemplateId = activeTemplateId === id ? null : id;
+  renderTemplates();
+  renderExercises();
+}
+function clearTemplate() {
+  activeTemplateId = null;
+  renderTemplates();
+  renderExercises();
+}
+
+function renderTemplates() {
+  const templates = getAllTemplates();
+  const scroll = document.getElementById('templateScroll');
+  scroll.innerHTML = templates.map(t => `
+    <div class="template-card${activeTemplateId === t.id ? ' active' : ''}" data-tpl-id="${t.id}">
+      <div class="template-card-icon">${t.icon}</div>
+      <div class="template-card-name">${t.name}</div>
+    </div>`).join('') +
+    `<div class="template-card" id="addTplCard">
+      <div class="template-card-icon">➕</div>
+      <div class="template-card-name">作成</div>
+    </div>`;
+
+  scroll.querySelectorAll('.template-card[data-tpl-id]').forEach(card =>
+    card.addEventListener('click', () => activateTemplate(card.dataset.tplId))
+  );
+  document.getElementById('addTplCard').addEventListener('click', openCtplModal);
+
+  const bar = document.getElementById('templateActiveBar');
+  if (activeTemplateId) {
+    const t = templates.find(t => t.id === activeTemplateId);
+    if (t) {
+      bar.style.display = 'flex';
+      document.getElementById('templateActiveName').textContent = `${t.icon} ${t.name}（${t.exercises.length}種目）`;
+    }
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+/* ───────────────────────────────────
+   CUSTOM TEMPLATE MODAL
+─────────────────────────────────── */
+function openCtplModal() {
+  const allEx = getAllExercises();
+  const list  = document.getElementById('ctplExList');
+  list.innerHTML = allEx.map(ex => `
+    <label class="ctpl-ex-item">
+      <input type="checkbox" value="${ex.name}">
+      <span class="ctpl-ex-item-name">${ex.name}</span>
+    </label>`).join('');
+  document.getElementById('ctplName').value = '';
+  document.getElementById('ctplModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeCtplModal() {
+  document.getElementById('ctplModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('ctplCancel').addEventListener('click', closeCtplModal);
+document.getElementById('ctplBackdrop').addEventListener('click', closeCtplModal);
+document.getElementById('ctplSave').addEventListener('click', () => {
+  const name = document.getElementById('ctplName').value.trim();
+  if (!name) { showToast('⚠️ テンプレート名を入力してください'); return; }
+  const exs = [...document.querySelectorAll('#ctplExList input:checked')].map(cb => cb.value);
+  if (!exs.length) { showToast('⚠️ 種目を1つ以上選んでください'); return; }
+  const icons = ['🌟','⚡','🎯','🏅','💥','🚀','🦾','🔑'];
+  const tpl = {
+    id:        'custom_' + Date.now(),
+    icon:      icons[Math.floor(Math.random() * icons.length)],
+    name,
+    exercises: exs,
+    custom:    true,
+  };
+  const customs = getCustomTemplates();
+  customs.push(tpl);
+  saveCustomTemplates(customs);
+  closeCtplModal();
+  renderTemplates();
+  showToast(`📋 「${name}」を保存しました`);
+});
+
+/* ───────────────────────────────────
+   CUSTOM EXERCISE MODAL
+─────────────────────────────────── */
+function openCexModal() {
+  document.getElementById('cexName').value   = '';
+  document.getElementById('cexNameEn').value = '';
+  document.getElementById('cexCat').value    = 'chest';
+  document.getElementById('cexLevel').value  = 'beginner';
+  document.getElementById('cexModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('cexName').focus(), 300);
+}
+function closeCexModal() {
+  document.getElementById('cexModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('cexCancel').addEventListener('click',  closeCexModal);
+document.getElementById('cexBackdrop').addEventListener('click', closeCexModal);
+document.getElementById('cexSave').addEventListener('click', () => {
+  const name = document.getElementById('cexName').value.trim();
+  if (!name) { showToast('⚠️ 種目名を入力してください'); return; }
+  const existing = getAllExercises().find(e => e.name === name);
+  if (existing) { showToast('⚠️ 同じ名前の種目が既にあります'); return; }
+  const cat = document.getElementById('cexCat').value;
+  const mu  = MUSCLES.find(m => m.id === cat);
+  const ex  = {
+    id:       Date.now().toString(),
+    name,
+    nameEn:   document.getElementById('cexNameEn').value.trim() || name,
+    cat,
+    level:    document.getElementById('cexLevel').value,
+    tools:    ['free'],
+    custom:   true,
+    color:    mu ? mu.color : '#818cf8',
+  };
+  addCustomExercise(ex);
+  closeCexModal();
+  renderExercises();
+  showToast(`✅ 「${name}」を追加しました`);
+});
+
+/* ───────────────────────────────────
+   TRAINING STREAK
+─────────────────────────────────── */
+function calcStreak() {
+  const logs = getLogs();
+  if (!logs.length) return { current: 0, longest: 0 };
+  const dates = [...new Set(logs.map(l => l.date))].sort((a,b) => b.localeCompare(a));
+  const today     = new Date().toISOString().slice(0,10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  let current = 0;
+  if (dates[0] === today || dates[0] === yesterday) {
+    current = 1;
+    let last = dates[0];
+    for (let i = 1; i < dates.length; i++) {
+      const prev = new Date(last + 'T00:00:00');
+      prev.setDate(prev.getDate() - 1);
+      if (dates[i] === prev.toISOString().slice(0,10)) { current++; last = dates[i]; }
+      else break;
+    }
+  }
+  const asc = [...dates].reverse();
+  let longest = 0, cur = 1;
+  for (let i = 1; i < asc.length; i++) {
+    const d1 = new Date(asc[i-1] + 'T00:00:00');
+    const d2 = new Date(asc[i]   + 'T00:00:00');
+    if ((d2 - d1) / 86400000 === 1) { cur++; }
+    else { longest = Math.max(longest, cur); cur = 1; }
+  }
+  return { current, longest: Math.max(longest, cur) };
+}
+
+/* ───────────────────────────────────
+   WEIGHT SUGGESTION
+─────────────────────────────────── */
+function getWeightSuggestion(exerciseName) {
+  const logs = getLogs().filter(l => l.exerciseName === exerciseName);
+  if (!logs.length) return null;
+  logs.sort((a,b) => b.date.localeCompare(a.date));
+  const lastLog = logs[0];
+  const validSets = lastLog.sets.filter(s => s.weight && s.reps);
+  if (!validSets.length) return null;
+  const best = validSets.reduce((mx,s) => (s.weight||0) > (mx.weight||0) ? s : mx);
+  const step = (best.weight || 0) >= 60 ? 5 : 2.5;
+  const suggest = Math.round((best.weight + step) * 2) / 2;
+  const e1rm = calc1RM(best.weight, best.reps);
+  const d = new Date(lastLog.date + 'T00:00:00');
+  const dateLabel = `${d.getMonth()+1}/${d.getDate()}`;
+  return { lastWeight: best.weight, lastReps: best.reps, dateLabel, suggest, e1rm: e1rm.toFixed(1) };
 }
 
 /* ───────────────────────────────────
@@ -1267,46 +1736,64 @@ function renderBanner() {
    EXERCISE CARDS
 ─────────────────────────────────── */
 function renderExercises() {
-  let list = EXERCISES;
-  if (selected) list = list.filter(ex => ex.cat === selected);
-  if (searchQ)  list = list.filter(ex =>
+  let list = getAllExercises();
+
+  // テンプレートフィルター（優先）
+  if (activeTemplateId) {
+    const tpl = getAllTemplates().find(t => t.id === activeTemplateId);
+    if (tpl) list = list.filter(ex => tpl.exercises.includes(ex.name));
+  } else if (selected) {
+    list = list.filter(ex => ex.cat === selected);
+  }
+  if (searchQ) list = list.filter(ex =>
     ex.name.toLowerCase().includes(searchQ) ||
-    ex.nameEn.toLowerCase().includes(searchQ)
+    (ex.nameEn || '').toLowerCase().includes(searchQ)
   );
-  const m = selected ? MUSCLES.find(d => d.id === selected) : null;
-  document.getElementById('sectionTitle').textContent = m ? `${m.icon} ${m.label}の種目` : '全種目';
+
+  const tpl = activeTemplateId ? getAllTemplates().find(t => t.id === activeTemplateId) : null;
+  const m   = selected ? MUSCLES.find(d => d.id === selected) : null;
+  document.getElementById('sectionTitle').textContent =
+    tpl ? `${tpl.icon} ${tpl.name}` : m ? `${m.icon} ${m.label}の種目` : '全種目';
   document.getElementById('sectionCount').textContent = `${list.length} 種目`;
+
   const grid = document.getElementById('exerciseGrid');
   if (!list.length) {
     grid.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><p>該当する種目がありません</p></div>`;
     return;
   }
+
   grid.innerHTML = `<div class="exercise-grid">${list.map(ex => {
-    const mu    = MUSCLES.find(d => d.id === ex.cat);
-    const color = mu ? mu.color : '#818cf8';
-    const lv    = LEVEL_MAP[ex.level];
-    const tools = ex.tools.map(t => { const tl=TOOL_MAP[t]||{text:t,cls:'tag-free'}; return `<span class="tag ${tl.cls}">${tl.text}</span>`; }).join('');
+    const mu       = MUSCLES.find(d => d.id === ex.cat);
+    const color    = ex.color || (mu ? mu.color : '#818cf8');
+    const lv       = LEVEL_MAP[ex.level] || LEVEL_MAP.beginner;
+    const tools    = (ex.tools||[]).map(t => { const tl=TOOL_MAP[t]||{text:t,cls:'tag-free'}; return `<span class="tag ${tl.cls}">${tl.text}</span>`; }).join('');
     const logCount = getLogCountForExercise(ex.name);
     const isPR     = hasPR(ex.name);
+    const isCustom = !!ex.custom;
     return `<div class="exercise-card" style="--accent-color:${color}${isPR?';border-color:rgba(250,204,21,.35)':''}">
+      ${isCustom ? `<button class="ex-delete-btn" data-custom-id="${ex.id}" title="削除">🗑</button>` : ''}
       <div class="ex-cat-row">
         <span class="ex-cat-dot" style="background:${color}"></span>
         <span class="ex-cat-label" style="color:${color}">${mu?mu.labelShort:''}</span>
+        ${isCustom ? '<span class="custom-ex-badge">カスタム</span>' : ''}
         <span class="pr-badge${isPR?' show':''}">🏆 PR</span>
         <span class="log-count-badge${logCount>0?' show':''}" title="${logCount}回記録済み">✓ ${logCount}</span>
       </div>
       <div class="ex-name">${ex.name}</div>
-      <div class="ex-name-en">${ex.nameEn}</div>
+      <div class="ex-name-en">${ex.nameEn||''}</div>
       <div class="ex-tags"><span class="tag ${lv.cls}">${lv.text}</span>${tools}</div>
       <div class="ex-actions">
-        <button class="btn-yt" data-url="https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+' やり方 筋トレ')}">
+        ${isCustom ? '' : `<button class="btn-yt" data-url="https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+' やり方 筋トレ')}">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="#ff4444"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.75 15.5V8.5l6.25 3.5-6.25 3.5z"/></svg>
-          動画
-        </button>
+          動画</button>`}
         <button class="btn-log" data-name="${ex.name}" data-cat="${ex.cat}" data-color="${color}">✏️ 記録</button>
       </div>
     </div>`;
-  }).join('')}</div>`;
+  }).join('')}
+    <div class="add-custom-ex-card" id="addCustomExCard">
+      <span style="font-size:18px">➕</span> カスタム種目を追加
+    </div>
+  </div>`;
 
   grid.querySelectorAll('.btn-yt').forEach(btn =>
     btn.addEventListener('click', () => { try{window.open(btn.dataset.url,'_blank')}catch(e){} })
@@ -1314,6 +1801,18 @@ function renderExercises() {
   grid.querySelectorAll('.btn-log').forEach(btn =>
     btn.addEventListener('click', () => openLogModal(btn.dataset.name, btn.dataset.cat, btn.dataset.color))
   );
+  grid.querySelectorAll('.ex-delete-btn').forEach(btn =>
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const ex = getCustomExercises().find(c => c.id === btn.dataset.customId);
+      if (!ex) return;
+      if (!confirm(`「${ex.name}」を削除しますか？`)) return;
+      deleteCustomExercise(ex.id);
+      renderExercises();
+      showToast(`🗑 「${ex.name}」を削除しました`);
+    })
+  );
+  document.getElementById('addCustomExCard')?.addEventListener('click', openCexModal);
 }
 
 /* ───────────────────────────────────
@@ -1339,6 +1838,24 @@ function openLogModal(name, cat, color, existingLog = null) {
     const lastLog = getLogs().find(l => l.exerciseName === name);
     renderSets(lastLog ? lastLog.sets : [{ reps:'', weight:'' }]);
     document.getElementById('btnSave').textContent = '✓ 記録を保存';
+  }
+
+  // Weight suggestion (新規記録時のみ)
+  const suggestEl = document.getElementById('weightSuggest');
+  const suggestTx = document.getElementById('weightSuggestText');
+  if (!existingLog) {
+    const sug = getWeightSuggestion(name);
+    if (sug) {
+      suggestTx.innerHTML =
+        `前回 <span class="weight-suggest-val">${sug.lastWeight}kg × ${sug.lastReps}rep</span>（${sug.dateLabel}）`
+        + ` ／ 推定1RM <span class="weight-suggest-val">${sug.e1rm}kg</span>`
+        + `<br>今回の目安：<span class="weight-suggest-val">${sug.suggest}kg</span>`;
+      suggestEl.style.display = 'flex';
+    } else {
+      suggestEl.style.display = 'none';
+    }
+  } else {
+    suggestEl.style.display = 'none';
   }
 
   document.getElementById('logModal').classList.add('open');
@@ -1465,10 +1982,37 @@ function renderHistoryStats() {
   logs.forEach(l => { freq[l.exerciseName] = (freq[l.exerciseName]||0)+1; });
   const topEx = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
 
+  const streak = calcStreak();
   document.getElementById('historyStats').innerHTML = `
     <div class="stat-card"><div class="stat-num">${logs.length}</div><div class="stat-label">総記録数</div></div>
     <div class="stat-card"><div class="stat-num">${thisWeek}</div><div class="stat-label">今週の記録</div></div>
     <div class="stat-card"><div class="stat-num" style="font-size:14px;line-height:1.3">${topEx?topEx[0]:'—'}</div><div class="stat-label">人気種目</div></div>`;
+
+  // Streak row — remove any previous instance, then re-insert
+  document.getElementById('streakRowWrap')?.remove();
+  if (logs.length > 0) {
+    const icon = streak.current >= 7 ? '🔥' : streak.current >= 3 ? '⚡' : '💪';
+    const wrap = document.createElement('div');
+    wrap.id = 'streakRowWrap';
+    wrap.innerHTML = `
+      <div class="streak-row">
+        <div class="streak-card">
+          <div class="streak-fire">${icon}</div>
+          <div>
+            <div class="streak-num">${streak.current}<span style="font-size:13px;font-weight:400">日</span></div>
+            <div class="streak-label">現在のストリーク</div>
+          </div>
+        </div>
+        <div class="streak-card best">
+          <div class="streak-fire">🏆</div>
+          <div>
+            <div class="streak-num">${streak.longest}<span style="font-size:13px;font-weight:400">日</span></div>
+            <div class="streak-label">最長ストリーク</div>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('historyStats').insertAdjacentElement('afterend', wrap);
+  }
 }
 
 function renderHistoryTimeline() {
@@ -1809,9 +2353,41 @@ document.querySelectorAll('.tab-btn').forEach(btn =>
   })
 );
 
+// template clear
+document.getElementById('templateClearBtn').addEventListener('click', clearTemplate);
+
+/* ───────────────────────────────────
+   PWA
+─────────────────────────────────── */
+let deferredPwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+  const banner = document.getElementById('pwaBanner');
+  if (!localStorage.getItem('pwa_dismissed')) banner.style.display = 'flex';
+});
+document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+  if (!deferredPwaPrompt) return;
+  deferredPwaPrompt.prompt();
+  const { outcome } = await deferredPwaPrompt.userChoice;
+  deferredPwaPrompt = null;
+  document.getElementById('pwaBanner').style.display = 'none';
+  if (outcome === 'accepted') showToast('📱 ホーム画面に追加しました！');
+});
+document.getElementById('pwaDismissBtn').addEventListener('click', () => {
+  document.getElementById('pwaBanner').style.display = 'none';
+  localStorage.setItem('pwa_dismissed', '1');
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
 /* ───────────────────────────────────
    INIT
 ─────────────────────────────────── */
+renderTemplates();
 renderTraining();
 </script>
 </body>
