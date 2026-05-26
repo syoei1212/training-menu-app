@@ -741,6 +741,83 @@
     .ctpl-ex-item input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
     .ctpl-ex-item-name { font-size: 13px; }
 
+    /* ── Recovery Advice ── */
+    .recovery-section { max-width: 720px; margin: 14px auto 0; padding: 0 16px; }
+    .recovery-label { font-size: 11px; font-weight: 700; color: var(--text-sub); letter-spacing: .5px; margin-bottom: 7px; }
+    .recovery-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+    .recovery-scroll::-webkit-scrollbar { display: none; }
+    .recovery-card {
+      flex-shrink: 0; width: 66px; border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 9px 4px 8px; text-align: center;
+      cursor: pointer; transition: all .18s; background: var(--card);
+    }
+    .recovery-card:hover { transform: translateY(-2px); filter: brightness(1.12); }
+    .rec-icon   { font-size: 20px; line-height: 1; }
+    .rec-muscle { font-size: 9px; font-weight: 700; color: var(--text-sub); margin: 3px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rec-status { font-size: 13px; }
+    .rec-sub    { font-size: 9px; color: var(--text-sub); margin-top: 2px; }
+    .rec-recovering { border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.06); }
+    .rec-almost     { border-color: rgba(251,191,36,.45);  background: rgba(251,191,36,.06); }
+    .rec-ready      { border-color: rgba(52,211,153,.45);  background: rgba(52,211,153,.06); }
+    .rec-none       { opacity: .45; }
+    .recovery-legend {
+      display: flex; gap: 10px; margin-top: 7px; font-size: 10px; color: var(--text-sub); flex-wrap: wrap;
+    }
+    .recovery-legend span { display: flex; align-items: center; gap: 3px; }
+
+    /* ── Calendar ── */
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+    }
+    .cal-month-title { font-size: 16px; font-weight: 800; }
+    .cal-nav-btn {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 8px;
+      width: 34px; height: 34px; color: var(--text-sub); font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all .15s; line-height: 1;
+    }
+    .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .cal-stats-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .cal-stat-chip {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 5px 10px; font-size: 12px; color: var(--text-sub);
+    }
+    .cal-day-headers { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 3px; }
+    .cal-day-header  { text-align: center; font-size: 10px; font-weight: 700; color: var(--text-sub); padding: 3px 0; }
+    .cal-day-header.cal-sat { color: #60a5fa; }
+    .cal-day-header.cal-sun { color: #f87171; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .cal-cell {
+      aspect-ratio: 1; border-radius: 7px; display: flex; flex-direction: column;
+      align-items: center; padding: 2px 1px; min-height: 38px; transition: background .12s;
+      position: relative;
+    }
+    .cal-cell-trained { cursor: pointer; }
+    .cal-cell-trained:hover { background: var(--card-hover); }
+    .cal-cell-other { opacity: .18; pointer-events: none; }
+    .cal-cell-today .cal-date span {
+      background: var(--accent); color: #fff; border-radius: 50%;
+      width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+    }
+    .cal-cell-sat .cal-date { color: #60a5fa; }
+    .cal-cell-sun .cal-date { color: #f87171; }
+    .cal-cell.cal-selected { background: rgba(129,140,248,.15); border: 1px solid rgba(129,140,248,.4); }
+    .cal-date { font-size: 10px; font-weight: 600; min-height: 19px; display: flex; align-items: center; justify-content: center; margin-bottom: 1px; }
+    .cal-dots { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; max-width: 28px; }
+    .cal-dot  { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .cal-detail { margin-top: 14px; }
+    .cal-detail-header {
+      font-size: 12px; font-weight: 700; color: var(--accent);
+      margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    }
+    .cal-detail-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .cal-detail-item:last-child { border-bottom: none; }
+    .cal-detail-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .cal-detail-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .cal-detail-sum  { font-size: 11px; color: var(--text-sub); flex-shrink: 0; }
+
     /* ── PWA Install Banner ── */
     .pwa-banner {
       position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
@@ -815,6 +892,17 @@
       <button class="clear-btn" id="clearBtn">✕ 解除</button>
     </div>
   </div>
+  <!-- ── Recovery Advice ── -->
+  <div class="recovery-section" id="recoverySection" style="display:none">
+    <div class="recovery-label">🩹 超回復アドバイス</div>
+    <div class="recovery-scroll" id="recoveryScroll"></div>
+    <div class="recovery-legend">
+      <span>🔴 48h以内（回復中）</span>
+      <span>🟡 48〜72h（もうすぐ）</span>
+      <span>🟢 72h以上（準備OK）</span>
+    </div>
+  </div>
+
   <!-- ── Quick Start Templates ── -->
   <div class="template-section">
     <div class="template-section-label">⚡ クイックスタート</div>
@@ -846,6 +934,7 @@
     <div class="history-view-toggle">
       <button class="hist-tab-btn active" data-view="timeline">📋 タイムライン</button>
       <button class="hist-tab-btn"        data-view="chart">📈 グラフ</button>
+      <button class="hist-tab-btn"        data-view="calendar">📅 カレンダー</button>
     </div>
     <!-- Filter (timeline only) -->
     <div class="history-filter" id="historyFilter">
@@ -859,6 +948,8 @@
       <div class="chart-stats-row" id="chartStatsRow"></div>
       <div class="chart-wrap" id="chartWrap"></div>
     </div>
+    <!-- Calendar -->
+    <div id="historyCalendar" style="display:none"></div>
   </div>
 </div>
 
@@ -1964,7 +2055,8 @@ document.getElementById('modalBackdrop').addEventListener('click', closeLogModal
 ─────────────────────────────────── */
 function renderHistory() {
   renderHistoryStats();
-  if (historyView === 'chart') renderChartView();
+  if (historyView === 'chart')    renderChartView();
+  else if (historyView === 'calendar') renderCalendarView();
   else renderHistoryTimeline();
 }
 
@@ -2108,6 +2200,159 @@ function renderHistoryTimeline() {
 }
 
 /* ───────────────────────────────────
+   RECOVERY ADVICE
+─────────────────────────────────── */
+function calcRecovery() {
+  const logs = getLogs();
+  const now  = Date.now();
+  return MUSCLES.map(m => {
+    const ml = logs.filter(l => l.exerciseCat === m.id);
+    if (!ml.length) return { muscle: m, status: 'none', daysAgo: null };
+    const latest = ml.sort((a,b) => b.date.localeCompare(a.date))[0];
+    const ms     = now - new Date(latest.date + 'T00:00:00').getTime();
+    const hours  = ms / 3600000;
+    const daysAgo = Math.floor(ms / 86400000);
+    const status  = hours < 48 ? 'recovering' : hours < 72 ? 'almost' : 'ready';
+    return { muscle: m, status, daysAgo };
+  });
+}
+
+function renderRecoveryAdvice() {
+  const section = document.getElementById('recoverySection');
+  const logs    = getLogs();
+  if (!logs.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const STATUS = {
+    recovering: { icon: '🔴', cls: 'rec-recovering' },
+    almost:     { icon: '🟡', cls: 'rec-almost' },
+    ready:      { icon: '🟢', cls: 'rec-ready' },
+    none:       { icon: '—',  cls: 'rec-none' },
+  };
+
+  document.getElementById('recoveryScroll').innerHTML = calcRecovery().map(r => {
+    const s   = STATUS[r.status];
+    const sub = r.daysAgo === null ? '未記録' : r.daysAgo === 0 ? '今日' : `${r.daysAgo}日前`;
+    return `<div class="recovery-card ${s.cls}" data-muscle="${r.muscle.id}">
+      <div class="rec-icon">${r.muscle.icon}</div>
+      <div class="rec-muscle">${r.muscle.labelShort}</div>
+      <div class="rec-status">${s.icon}</div>
+      <div class="rec-sub">${sub}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('recoveryScroll').querySelectorAll('.recovery-card').forEach(card =>
+    card.addEventListener('click', () => toggleMuscle(card.dataset.muscle))
+  );
+}
+
+/* ───────────────────────────────────
+   CALENDAR VIEW
+─────────────────────────────────── */
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function renderCalendarView() { renderCalendar(calYear, calMonth); }
+
+function renderCalendar(year, month) {
+  const logs  = getLogs();
+  const byDate = {};
+  logs.forEach(l => { (byDate[l.date] = byDate[l.date]||[]).push(l); });
+
+  const today  = new Date().toISOString().slice(0,10);
+  const first  = new Date(year, month, 1);
+  const last   = new Date(year, month+1, 0);
+  const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const DOW    = ['月','火','水','木','金','土','日'];
+
+  // Monday-start offset
+  const startOff = first.getDay() === 0 ? 6 : first.getDay() - 1;
+  const totalCells = Math.ceil((startOff + last.getDate()) / 7) * 7;
+
+  const mStr  = `${year}-${String(month+1).padStart(2,'0')}`;
+  const mLogs = logs.filter(l => l.date.startsWith(mStr));
+  const mDays = new Set(mLogs.map(l => l.date)).size;
+
+  let cells = '';
+  for (let i = 0; i < totalCells; i++) {
+    const dayNum  = i - startOff + 1;
+    const inMonth = dayNum >= 1 && dayNum <= last.getDate();
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+    const dLogs   = inMonth ? (byDate[dateStr]||[]) : [];
+    const dow     = new Date(year, month, dayNum).getDay(); // 0=Sun
+    const isSat   = dow === 6, isSun = dow === 0;
+
+    const dots = [...new Set(dLogs.map(l => l.exerciseCat))]
+      .map(c => { const m = MUSCLES.find(m => m.id === c); return m ? m.color : '#818cf8'; })
+      .slice(0, 4)
+      .map(c => `<span class="cal-dot" style="background:${c}"></span>`)
+      .join('');
+
+    const cls = [
+      'cal-cell',
+      !inMonth          ? 'cal-cell-other'   : '',
+      inMonth && dateStr === today ? 'cal-cell-today' : '',
+      dLogs.length      ? 'cal-cell-trained' : '',
+      isSat             ? 'cal-cell-sat'     : '',
+      isSun             ? 'cal-cell-sun'     : '',
+    ].filter(Boolean).join(' ');
+
+    cells += `<div class="${cls}"${dLogs.length ? ` data-date="${dateStr}"` : ''}>
+      <div class="cal-date">${inMonth ? `<span>${dayNum}</span>` : ''}</div>
+      <div class="cal-dots">${dots}</div>
+    </div>`;
+  }
+
+  const container = document.getElementById('historyCalendar');
+  container.innerHTML = `
+    <div class="cal-header">
+      <button class="cal-nav-btn" id="calPrev">‹</button>
+      <div class="cal-month-title">${year}年 ${MONTHS[month]}</div>
+      <button class="cal-nav-btn" id="calNext">›</button>
+    </div>
+    <div class="cal-stats-row">
+      <span class="cal-stat-chip">📅 トレーニング <strong>${mDays}</strong> 日</span>
+      <span class="cal-stat-chip">📝 記録 <strong>${mLogs.length}</strong> 件</span>
+    </div>
+    <div class="cal-day-headers">
+      ${DOW.map((d,i) => `<div class="cal-day-header${i===5?' cal-sat':i===6?' cal-sun':''}">${d}</div>`).join('')}
+    </div>
+    <div class="cal-grid">${cells}</div>
+    <div class="cal-detail" id="calDetail"></div>`;
+
+  container.querySelector('#calPrev').addEventListener('click', () => {
+    calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar(calYear, calMonth);
+  });
+  container.querySelector('#calNext').addEventListener('click', () => {
+    calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar(calYear, calMonth);
+  });
+
+  container.querySelectorAll('.cal-cell-trained').forEach(cell => {
+    cell.addEventListener('click', () => {
+      container.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('cal-selected'));
+      cell.classList.add('cal-selected');
+      const dLogs = byDate[cell.dataset.date] || [];
+      const dd    = new Date(cell.dataset.date + 'T00:00:00');
+      const lbl   = `${dd.getFullYear()}年${dd.getMonth()+1}月${dd.getDate()}日（${DAYS_JA[dd.getDay()]}）`;
+      document.getElementById('calDetail').innerHTML = `
+        <div class="cal-detail-header">${lbl} — ${dLogs.length}種目</div>
+        ${dLogs.map(log => {
+          const vs   = log.sets.filter(s => s.reps||s.weight);
+          const maxW = vs.reduce((mx,s) => Math.max(mx, s.weight||0), 0);
+          const col  = log.exerciseColor || '#818cf8';
+          return `<div class="cal-detail-item">
+            <span class="cal-detail-dot" style="background:${col}"></span>
+            <span class="cal-detail-name">${log.exerciseName}</span>
+            <span class="cal-detail-sum">${vs.length}セット${maxW ? ` / ${maxW}kg` : ''}</span>
+          </div>`;
+        }).join('')}`;
+    });
+  });
+}
+
+/* ───────────────────────────────────
    PROGRESS CHART
 ─────────────────────────────────── */
 let historyView    = 'timeline';
@@ -2124,11 +2369,15 @@ function switchHistoryView(view) {
   document.querySelectorAll('.hist-tab-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.view === view)
   );
+  const isCal   = view === 'calendar';
   const isChart = view === 'chart';
-  document.getElementById('historyTimeline').style.display = isChart ? 'none' : '';
-  document.getElementById('historyChart').style.display    = isChart ? ''     : 'none';
-  document.getElementById('historyFilter').style.display   = isChart ? 'none' : '';
+  const isLine  = view === 'timeline';
+  document.getElementById('historyTimeline').style.display = isLine  ? '' : 'none';
+  document.getElementById('historyChart').style.display    = isChart ? '' : 'none';
+  document.getElementById('historyCalendar').style.display = isCal   ? '' : 'none';
+  document.getElementById('historyFilter').style.display   = isLine  ? '' : 'none';
   if (isChart) renderChartView();
+  else if (isCal) renderCalendarView();
   else renderHistoryTimeline();
 }
 
@@ -2311,7 +2560,7 @@ function toggleMuscle(id) {
 }
 
 function renderTraining() {
-  rebuildSVG(); renderChips(); renderBanner(); renderExercises();
+  rebuildSVG(); renderChips(); renderBanner(); renderExercises(); renderRecoveryAdvice();
 }
 
 /* ───────────────────────────────────
