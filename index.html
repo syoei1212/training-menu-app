@@ -37,6 +37,7 @@
     header {
       background: var(--surface); border-bottom: 1px solid var(--border);
       padding: 14px 16px 12px; position: sticky; top: 0; z-index: 50;
+      padding-bottom: 0;
     }
     .header-inner { max-width: 720px; margin: 0 auto; }
     .app-title {
@@ -58,7 +59,7 @@
     /* ── Tab bar ── */
     .tab-bar {
       display: flex; max-width: 720px; margin: 0 auto;
-      padding: 10px 16px 0; gap: 6px;
+      padding: 8px 16px 0; gap: 6px;
     }
     .tab-btn {
       flex: 1; padding: 9px 8px; border-radius: 10px;
@@ -671,6 +672,23 @@
     .weight-suggest-icon { font-size: 15px; flex-shrink: 0; padding-top: 1px; }
     .weight-suggest-body { font-size: 11px; line-height: 1.6; color: var(--text-sub); }
     .weight-suggest-val  { color: var(--accent); font-weight: 700; }
+    .ws-up   { color: #34d399; font-weight: 700; }
+    .ws-down { color: #f87171; font-weight: 700; }
+    .ws-same { color: var(--text-sub); font-weight: 700; }
+    .log-volume { font-size: 11px; color: var(--accent); font-weight: 700; margin-top: 2px; }
+    /* ── Balance Warnings ── */
+    .balance-section {
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .balance-warning {
+      display: flex; align-items: flex-start; gap: 8px;
+      background: rgba(251,191,36,.07); border: 1px solid rgba(251,191,36,.22);
+      border-radius: 10px; padding: 9px 12px; margin-bottom: 7px;
+      font-size: 12px; color: var(--text); line-height: 1.55;
+    }
+    .balance-warning:last-child { margin-bottom: 0; }
+    .balance-warning-icon { font-size: 15px; flex-shrink: 0; padding-top: 1px; }
 
     /* ── Template Section ── */
     .template-section { max-width: 720px; margin: 16px auto 0; padding: 0 16px; }
@@ -927,13 +945,12 @@
       <input id="searchInput" type="search" placeholder="種目名で検索…" autocomplete="off">
     </div>
   </div>
+  <!-- ── Tab bar（header内でスティッキー固定） ── -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="training">🏋️ トレーニング</button>
+    <button class="tab-btn"        data-tab="history">📊 記録一覧</button>
+  </div>
 </header>
-
-<!-- ── Tab bar ── -->
-<div class="tab-bar">
-  <button class="tab-btn active" data-tab="training">🏋️ トレーニング</button>
-  <button class="tab-btn"        data-tab="history">📊 記録一覧</button>
-</div>
 
 <!-- ══════════════════════════════════
      VIEW: Training
@@ -974,6 +991,7 @@
       <span>🟡 48〜72h（もうすぐ）</span>
       <span>🟢 72h以上（準備OK）</span>
     </div>
+    <div id="balanceWarnings"></div>
   </div>
 
   <!-- ── Quick Start Templates ── -->
@@ -2114,10 +2132,16 @@ function openLogModal(name, cat, color, existingLog = null) {
   if (!existingLog) {
     const sug = getWeightSuggestion(name);
     if (sug) {
+      const diff   = sug.suggest - sug.lastWeight;
+      const arrow  = diff > 0
+        ? `<span class="ws-up">↑ +${diff.toFixed(1)}kg 増量チャレンジ</span>`
+        : diff < 0
+          ? `<span class="ws-down">↓ ${diff.toFixed(1)}kg 調整推奨</span>`
+          : `<span class="ws-same">→ 前回と同重量</span>`;
       suggestTx.innerHTML =
         `前回 <span class="weight-suggest-val">${sug.lastWeight}kg × ${sug.lastReps}rep</span>（${sug.dateLabel}）`
         + ` ／ 推定1RM <span class="weight-suggest-val">${sug.e1rm}kg</span>`
-        + `<br>今回の目安：<span class="weight-suggest-val">${sug.suggest}kg</span>`;
+        + `<br>今回の目安：<span class="weight-suggest-val">${sug.suggest}kg</span> ${arrow}`;
       suggestEl.style.display = 'flex';
     } else {
       suggestEl.style.display = 'none';
@@ -2370,9 +2394,13 @@ function renderHistoryTimeline() {
           const avgR = validSets.length
             ? Math.round(validSets.reduce((s,r) => s+(r.reps||0),0) / validSets.length)
             : 0;
+          const totalVol = validSets.reduce((s, r) => s + (r.weight||0)*(r.reps||0), 0);
           const summary = validSets.length
             ? `${validSets.length}セット${avgR ? ` × ${avgR}回` : ''}${maxW ? ` × 最大${maxW}kg` : ''}`
             : 'セット未入力';
+          const volStr  = totalVol > 0
+            ? `<div class="log-volume">総ボリューム ${totalVol.toLocaleString()} kg</div>`
+            : '';
           const color   = log.exerciseColor || '#818cf8';
           const prs     = getStoredPRs();
           const isLogPR = prs[log.exerciseName]?.logId === log.id;
@@ -2388,6 +2416,7 @@ function renderHistoryTimeline() {
               <div class="log-info">
                 <div class="log-ex-name">${log.exerciseName}${isLogPR?'<span class="pr-history-tag">🏆 PR</span>':''}</div>
                 <div class="log-summary">${summary}</div>
+                ${volStr}
               </div>
               <span class="log-chevron">▶</span>
               <button class="log-edit-btn"   data-id="${log.id}">編集</button>
@@ -2437,6 +2466,44 @@ function renderHistoryTimeline() {
 /* ───────────────────────────────────
    RECOVERY ADVICE
 ─────────────────────────────────── */
+function calcBalanceWarnings() {
+  const logs = getLogs();
+  if (!logs.length) return [];
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  const cutoffStr = localDateStr(cutoff);
+  const recent = logs.filter(l => l.date >= cutoffStr);
+  if (!recent.length) return [];
+
+  const counts = {};
+  MUSCLES.forEach(m => { counts[m.id] = 0; });
+  recent.forEach(l => { if (counts[l.exerciseCat] !== undefined) counts[l.exerciseCat]++; });
+
+  const maxCount = Math.max(...Object.values(counts));
+  if (maxCount < 3) return [];
+
+  const warnings = [];
+  const pushIds = ['chest','shoulders','triceps'];
+  const pullIds = ['back','biceps'];
+  const pushN = pushIds.reduce((s,id) => s + counts[id], 0);
+  const pullN = pullIds.reduce((s,id) => s + counts[id], 0);
+
+  if (pushN >= 3 && pullN === 0)
+    warnings.push('⚠️ 押す系（胸・肩・三頭筋）ばかりです。背中・二頭筋など引く系も取り入れましょう。');
+  else if (pullN >= 3 && pushN === 0)
+    warnings.push('⚠️ 引く系（背中・二頭筋）ばかりです。胸・肩など押す系も取り入れましょう。');
+  else if (pushN > 0 && pullN > 0 && Math.max(pushN/pullN, pullN/pushN) > 2.5) {
+    const [more, less] = pushN > pullN
+      ? ['押す系（胸・肩・三頭筋）','引く系（背中・二頭筋）']
+      : ['引く系（背中・二頭筋）','押す系（胸・肩・三頭筋）'];
+    warnings.push(`⚠️ ${more}に偏っています。${less}のバランスを意識しましょう。`);
+  }
+
+  if (counts['legs'] === 0 && maxCount >= 4)
+    warnings.push('💤 脚トレが30日間ありません。下半身は全身の70%以上の筋肉を担います。');
+
+  return warnings;
+}
+
 function calcRecovery() {
   const logs = getLogs();
   const now  = Date.now();
@@ -2479,6 +2546,20 @@ function renderRecoveryAdvice() {
   document.getElementById('recoveryScroll').querySelectorAll('.recovery-card').forEach(card =>
     card.addEventListener('click', () => toggleMuscle(card.dataset.muscle))
   );
+
+  // アンバランス警告
+  const warnings = calcBalanceWarnings();
+  const bw = document.getElementById('balanceWarnings');
+  if (warnings.length) {
+    bw.innerHTML = `<div class="balance-section">${
+      warnings.map(w => `<div class="balance-warning">
+        <span class="balance-warning-icon">${w.slice(0,2)}</span>
+        <span>${w.slice(2).trim()}</span>
+      </div>`).join('')
+    }</div>`;
+  } else {
+    bw.innerHTML = '';
+  }
 }
 
 /* ───────────────────────────────────
